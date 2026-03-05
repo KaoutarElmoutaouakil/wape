@@ -52,6 +52,18 @@ import Projects from './pages/Projects';
 import ProjectDetails from './pages/ProjectDetails';
 import Tasks from './pages/Tasks';
 import TaskDetails from './pages/TaskDetails';
+import Personnel from './pages/Personnel';
+import Tools from './pages/Tools';
+import Articles from './pages/Articles';
+import Stock from './pages/Stock';
+import Expenses from './pages/Expenses';
+import Finance from './pages/Finance';
+import Plans from './pages/Plans';
+import Documents from './pages/Documents';
+import NonConformities from './pages/NonConformities';
+import Communication from './pages/Communication';
+import Reporting from './pages/Reporting';
+import Administration from './pages/Administration';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +73,18 @@ export const PAGES = {
     "ProjectDetails": ProjectDetails,
     "Tasks": Tasks,
     "TaskDetails": TaskDetails,
+    "Personnel": Personnel,
+    "Tools": Tools,
+    "Articles": Articles,
+    "Stock": Stock,
+    "Expenses": Expenses,
+    "Finance": Finance,
+    "Plans": Plans,
+    "Documents": Documents,
+    "NonConformities": NonConformities,
+    "Communication": Communication,
+    "Reporting": Reporting,
+    "Administration": Administration,
 }
 
 export const pagesConfig = {
