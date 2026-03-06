@@ -30,6 +30,7 @@ export default function Reception() {
   });
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
   const { data: articles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => base44.entities.Article.list() });
+  const { data: purchaseOrders = [] } = useQuery({ queryKey: ["purchase-orders"], queryFn: () => base44.entities.PurchaseOrder.list() });
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
