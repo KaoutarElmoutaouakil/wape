@@ -22,11 +22,12 @@ const navItems = [
     ]
   },
   {
-    name: "Warehouse", icon: Package, children: [
-      { name: "Articles", icon: ShoppingCart, page: "Articles" },
-      { name: "Stock", icon: Package, page: "Stock" },
-      { name: "Reception", icon: Truck, page: "Reception" },
-    ]
+  name: "Warehouse", icon: Package, children: [
+    { name: "Articles", icon: ShoppingCart, page: "Articles" },
+    { name: "Stock", icon: Package, page: "Stock" },
+    { name: "Purchase Orders", icon: ClipboardList, page: "PurchaseOrders" },
+    { name: "Reception", icon: Truck, page: "Reception" },
+  ]
   },
   {
     name: "Finance", icon: DollarSign, children: [
