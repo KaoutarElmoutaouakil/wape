@@ -152,6 +152,18 @@ export default function Reception() {
               <Input value={form.received_by || ""} onChange={(e) => setForm({ ...form, received_by: e.target.value })} />
             </div>
             <div>
+              <Label>Linked Purchase Order</Label>
+              <Select value={form.purchase_order_id || ""} onValueChange={(v) => setForm({ ...form, purchase_order_id: v || "" })}>
+                <SelectTrigger><SelectValue placeholder="Link to PO (optional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {purchaseOrders.filter(o => o.status !== "received").map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.order_number || `PO-${o.id?.slice(-6)}`} — {o.supplier}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Project</Label>
               <Select value={form.project_id || ""} onValueChange={(v) => { const p = projects.find(x => x.id === v); setForm({ ...form, project_id: v, project_name: p?.name || "" }); }}>
                 <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
