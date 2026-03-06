@@ -19,6 +19,10 @@ const pageTitles = {
   Communication: "Communication",
   Reporting: "Reporting",
   Administration: "Administration",
+  Reception: "Reception",
+  Subcontractors: "Subcontractors",
+  Attachments: "Attachments & Validation",
+  Invoices: "Invoices",
 };
 
 export default function Layout({ children, currentPageName }) {
