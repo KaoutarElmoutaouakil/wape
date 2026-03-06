@@ -178,6 +178,7 @@ export default function Tasks() {
         </Select>
         <div className="flex border border-border rounded-md overflow-hidden">
           <Button variant={view === "list" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("list")}><List className="w-4 h-4" /></Button>
+          <Button variant={view === "kanban" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("kanban")}><Kanban className="w-4 h-4" />Kanban</Button>
           <Button variant={view === "gantt" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("gantt")}><BarChart2 className="w-4 h-4" />Gantt</Button>
         </div>
       </PageHeader>
