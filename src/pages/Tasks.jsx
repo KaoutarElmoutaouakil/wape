@@ -185,6 +185,14 @@ export default function Tasks() {
 
       {view === "list" && <DataTable columns={columns} data={filtered} isLoading={isLoading} />}
 
+      {view === "kanban" && (
+        <KanbanBoard
+          tasks={filtered}
+          onStatusChange={(id, status) => updateTaskStatusMutation.mutate({ id, status })}
+          onEdit={openForm}
+        />
+      )}
+
       {view === "gantt" && (
         <Card>
           <CardHeader className="pb-2">
