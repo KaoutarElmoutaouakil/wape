@@ -32,7 +32,7 @@ const navItems = [
     name: "Finance", icon: DollarSign, children: [
       { name: "Finance", icon: DollarSign, page: "Finance" },
       { name: "Expenses", icon: Receipt, page: "Expenses" },
-      { name: "Invoices", icon: FileText, page: "Invoices" },
+      { name: "Invoices", icon: Receipt, page: "Invoices" },
     ]
   },
   { name: "Documents", icon: FileText, page: "Documents" },
