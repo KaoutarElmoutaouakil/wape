@@ -74,6 +74,7 @@ export default function Documents() {
       </div>
     )},
     { header: "Type", cell: (row) => <StatusBadge status={row.type} /> },
+    { header: "Module", cell: (row) => row.source_module ? <span className="text-xs text-muted-foreground capitalize">{row.source_module.replace(/_/g, " ")}</span> : "—" },
     { header: "Project", accessor: "project_name" },
     { header: "Created", cell: (row) => format(new Date(row.created_date), "MMM d, yyyy") },
     { header: "File", cell: (row) => row.file_url ? (
