@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Upload, ExternalLink, Plus, X, Package } from "lucide-react";
+import { Upload, ExternalLink, Plus, X, Package, Link as LinkIcon } from "lucide-react";
+import { uploadAndRegister } from "@/components/shared/uploadAndRegister";
 
 export default function Reception() {
   const [search, setSearch] = useState("");

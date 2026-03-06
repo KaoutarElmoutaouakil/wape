@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Eye, BarChart2, List } from "lucide-react";
+import { Eye, BarChart2, List, Kanban } from "lucide-react";
+import KanbanBoard from "@/components/tasks/KanbanBoard";
 
 export default function Tasks() {
   const params = new URLSearchParams(window.location.search);
