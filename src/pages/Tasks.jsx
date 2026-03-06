@@ -42,6 +42,11 @@ export default function Tasks() {
   const { data: articles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => base44.entities.Article.list() });
   const { data: tools = [] } = useQuery({ queryKey: ["tools"], queryFn: () => base44.entities.Tool.list() });
 
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => base44.entities.Task.update(id, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       // Auto-calculate estimated cost
@@ -58,6 +63,29 @@ export default function Tasks() {
       const toolsCost = (data.assigned_tools || []).reduce((s, t) => s + (t.cost || 0), 0);
       const estimated_cost = personnelCost + articlesCost + toolsCost;
 
+      const savedTask = editing
+        ? await base44.entities.Task.update(editing.id, { ...data, estimated_cost })
+        : await base44.entities.Task.create({ ...data, estimated_cost });
+
+      // Create RESERVED stock movements for newly assigned articles
+      const prevArticleIds = (editing?.assigned_articles || []).map(a => a.id);
+      const newArticles = (data.assigned_articles || []).filter(a => !prevArticleIds.includes(a.id));
+      for (const art of newArticles) {
+        await base44.entities.StockMovement.create({
+          article_id: art.id,
+          article_name: art.name,
+          movement_type: "RESERVED",
+          quantity: art.quantity || 1,
+          date: new Date().toISOString().split("T")[0],
+          project_id: data.project_id,
+          project_name: data.project_name,
+          task_id: savedTask.id,
+          task_name: data.name,
+          notes: `Reserved for task "${data.name}"`,
+        });
+      }
+      if (newArticles.length) queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+
       // Notify assigned personnel
       if (!editing && data.assigned_personnel?.length) {
         for (const p of data.assigned_personnel) {
@@ -72,9 +100,7 @@ export default function Tasks() {
         queryClient.invalidateQueries({ queryKey: ["communications"] });
       }
 
-      return editing
-        ? base44.entities.Task.update(editing.id, { ...data, estimated_cost })
-        : base44.entities.Task.create({ ...data, estimated_cost });
+      return savedTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
