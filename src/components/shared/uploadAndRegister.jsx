@@ -14,6 +14,7 @@ export async function uploadAndRegister(file, { module = "upload", projectId, pr
     name: file.name,
     type: docType,
     file_url,
+    source_module: module,
     project_id: projectId || "",
     project_name: projectName || "",
     task_id: taskId || "",
