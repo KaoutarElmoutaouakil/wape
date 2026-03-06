@@ -38,8 +38,10 @@ export default function Reception() {
         ? await base44.entities.Reception.update(editing.id, data)
         : await base44.entities.Reception.create(data);
 
-      // Auto-create IN stock movements for received items
-      if (!editing || data.status !== editing?.status) {
+      // Auto-create IN stock movements for received items (only for new or status changes)
+      const prevStatus = editing?.status;
+      const isNewOrStatusChanged = !editing || data.status !== prevStatus;
+      if (isNewOrStatusChanged && (data.status === "complete" || data.status === "partial")) {
         for (const item of (data.items || [])) {
           if (item.article_id && item.received_qty > 0) {
             await base44.entities.StockMovement.create({
@@ -51,7 +53,7 @@ export default function Reception() {
               project_id: data.project_id,
               project_name: data.project_name,
               responsible: data.received_by,
-              notes: `Auto from reception ${rec.id}`,
+              notes: `Auto from reception — ${data.supplier}`,
             });
             // Update article stock
             const art = articles.find(a => a.id === item.article_id);
@@ -65,6 +67,16 @@ export default function Reception() {
         queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
         queryClient.invalidateQueries({ queryKey: ["articles"] });
       }
+
+      // Update linked purchase order status
+      if (data.purchase_order_id) {
+        const newPoStatus = data.status === "complete" ? "received" : data.status === "partial" ? "partially_received" : null;
+        if (newPoStatus) {
+          await base44.entities.PurchaseOrder.update(data.purchase_order_id, { status: newPoStatus });
+          queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+        }
+      }
+
       return rec;
     },
     onSuccess: () => {
