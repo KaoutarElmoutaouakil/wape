@@ -68,6 +68,7 @@ import Reception from './pages/Reception';
 import Subcontractors from './pages/Subcontractors';
 import Attachments from './pages/Attachments';
 import Invoices from './pages/Invoices';
+import PurchaseOrders from './pages/PurchaseOrders';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "Subcontractors": Subcontractors,
     "Attachments": Attachments,
     "Invoices": Invoices,
+    "PurchaseOrders": PurchaseOrders,
 }
 
 export const pagesConfig = {
