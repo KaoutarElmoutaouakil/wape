@@ -6,22 +6,25 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import FormDialog from "@/components/shared/FormDialog";
 import TaskForm from "@/components/tasks/TaskForm";
+import GanttChart from "@/components/tasks/GanttChart";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Eye } from "lucide-react";
+import { Eye, BarChart2, List } from "lucide-react";
 
 export default function Tasks() {
   const params = new URLSearchParams(window.location.search);
   const projectFilter = params.get("project") || "all";
-  
+
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [view, setView] = useState("list");
   const queryClient = useQueryClient();
 
   const { data: tasks = [], isLoading } = useQuery({
@@ -34,10 +37,44 @@ export default function Tasks() {
     queryFn: () => base44.entities.Project.list(),
   });
 
+  const { data: personnel = [] } = useQuery({ queryKey: ["personnel"], queryFn: () => base44.entities.Personnel.list() });
+  const { data: articles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => base44.entities.Article.list() });
+  const { data: tools = [] } = useQuery({ queryKey: ["tools"], queryFn: () => base44.entities.Tool.list() });
+
   const saveMutation = useMutation({
-    mutationFn: (data) => editing
-      ? base44.entities.Task.update(editing.id, data)
-      : base44.entities.Task.create(data),
+    mutationFn: async (data) => {
+      // Auto-calculate estimated cost
+      const personnelCost = (data.assigned_personnel || []).reduce((s, p) => {
+        if (p.cost) return s + p.cost;
+        const found = personnel.find(x => x.id === p.id);
+        return s + (found?.salary ? found.salary / 160 * (p.hours || 8) : 0);
+      }, 0);
+      const articlesCost = (data.assigned_articles || []).reduce((s, a) => {
+        if (a.unit_cost) return s + a.unit_cost * (a.quantity || 1);
+        const found = articles.find(x => x.id === a.id);
+        return s + ((found?.purchase_cost || 0) * (a.quantity || 1));
+      }, 0);
+      const toolsCost = (data.assigned_tools || []).reduce((s, t) => s + (t.cost || 0), 0);
+      const estimated_cost = personnelCost + articlesCost + toolsCost;
+
+      // Notify assigned personnel
+      if (!editing && data.assigned_personnel?.length) {
+        for (const p of data.assigned_personnel) {
+          await base44.entities.Communication.create({
+            message: `✅ You have been assigned to task: "${data.name}"${data.project_name ? ` on project "${data.project_name}"` : ""}`,
+            author: "WAPE System",
+            type: "notification",
+            project_id: data.project_id,
+            project_name: data.project_name,
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ["communications"] });
+      }
+
+      return editing
+        ? base44.entities.Task.update(editing.id, { ...data, estimated_cost })
+        : base44.entities.Task.create({ ...data, estimated_cost });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       setShowForm(false);
@@ -73,11 +110,11 @@ export default function Tasks() {
       </span>
     )},
     { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
-    { header: "Assigned", cell: (row) => (
-      <span className="text-xs text-muted-foreground">
-        {(row.assigned_personnel || []).length} people
-      </span>
-    )},
+    { header: "Est. Cost", cell: (row) => row.estimated_cost
+      ? <span className="text-xs font-semibold text-warning">€{row.estimated_cost.toLocaleString()}</span>
+      : <span className="text-xs text-muted-foreground">—</span>
+    },
+    { header: "Assigned", cell: (row) => <span className="text-xs text-muted-foreground">{(row.assigned_personnel || []).length} people</span> },
     { header: "", cell: (row) => (
       <div className="flex gap-1">
         <Link to={createPageUrl("TaskDetails") + `?id=${row.id}`}>
@@ -90,14 +127,7 @@ export default function Tasks() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="Tasks"
-        subtitle={`${tasks.length} total tasks`}
-        onAdd={() => openForm()}
-        addLabel="New Task"
-        searchValue={search}
-        onSearch={setSearch}
-      >
+      <PageHeader title="Tasks" subtitle={`${tasks.length} total tasks`} onAdd={() => openForm()} addLabel="New Task" searchValue={search} onSearch={setSearch}>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -119,9 +149,24 @@ export default function Tasks() {
             <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex border border-border rounded-md overflow-hidden">
+          <Button variant={view === "list" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("list")}><List className="w-4 h-4" /></Button>
+          <Button variant={view === "gantt" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("gantt")}><BarChart2 className="w-4 h-4" />Gantt</Button>
+        </div>
       </PageHeader>
 
-      <DataTable columns={columns} data={filtered} isLoading={isLoading} />
+      {view === "list" && <DataTable columns={columns} data={filtered} isLoading={isLoading} />}
+
+      {view === "gantt" && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Gantt Chart — Project Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GanttChart tasks={filtered} />
+          </CardContent>
+        </Card>
+      )}
 
       <FormDialog open={showForm} onOpenChange={setShowForm} title={editing ? "Edit Task" : "New Task"}>
         <TaskForm
