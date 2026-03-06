@@ -87,8 +87,13 @@ export default function Reception() {
   const uploadDoc = async (e, docType) => {
     const file = e.target.files[0]; if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm({ ...form, documents: [...(form.documents || []), { name: file.name, type: docType, file_url }] });
+    const { file_url } = await uploadAndRegister(file, {
+      module: "reception",
+      projectId: form.project_id,
+      projectName: form.project_name,
+      docType,
+    });
+    setForm(prev => ({ ...prev, documents: [...(prev.documents || []), { name: file.name, type: docType, file_url }] }));
     setUploading(false);
   };
 
