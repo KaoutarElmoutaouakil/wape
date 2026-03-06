@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import SearchableSelect from "@/components/shared/SearchableSelect";
+import { base44 } from "@/api/base44Client";
 
 export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
   const queryClient = useQueryClient();
