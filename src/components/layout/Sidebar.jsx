@@ -4,7 +4,8 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, FolderKanban, Map, CheckSquare, Users, Wrench, Package,
   ShoppingCart, DollarSign, Receipt, FileText, AlertTriangle, MessageSquare,
-  BarChart3, Settings, ChevronDown, ChevronRight, HardHat, Menu, X
+  BarChart3, Settings, ChevronDown, ChevronRight, HardHat, Menu, X,
+  Truck, Building2, Paperclip
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,14 +18,26 @@ const navItems = [
     name: "Resources", icon: Users, children: [
       { name: "Personnel", icon: Users, page: "Personnel" },
       { name: "Tools", icon: Wrench, page: "Tools" },
+      { name: "Subcontractors", icon: Building2, page: "Subcontractors" },
     ]
   },
-  { name: "Stock", icon: Package, page: "Stock" },
-  { name: "Articles", icon: ShoppingCart, page: "Articles" },
-  { name: "Finance", icon: DollarSign, page: "Finance" },
-  { name: "Expenses", icon: Receipt, page: "Expenses" },
+  {
+    name: "Warehouse", icon: Package, children: [
+      { name: "Articles", icon: ShoppingCart, page: "Articles" },
+      { name: "Stock", icon: Package, page: "Stock" },
+      { name: "Reception", icon: Truck, page: "Reception" },
+    ]
+  },
+  {
+    name: "Finance", icon: DollarSign, children: [
+      { name: "Finance", icon: DollarSign, page: "Finance" },
+      { name: "Expenses", icon: Receipt, page: "Expenses" },
+      { name: "Invoices", icon: FileText, page: "Invoices" },
+    ]
+  },
   { name: "Documents", icon: FileText, page: "Documents" },
   { name: "Non Conformities", icon: AlertTriangle, page: "NonConformities" },
+  { name: "Attachments", icon: Paperclip, page: "Attachments" },
   { name: "Communication", icon: MessageSquare, page: "Communication" },
   { name: "Reporting", icon: BarChart3, page: "Reporting" },
   { name: "Administration", icon: Settings, page: "Administration" },
