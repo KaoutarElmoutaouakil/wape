@@ -97,6 +97,7 @@ export default function Stock() {
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="IN">IN</SelectItem>
             <SelectItem value="OUT">OUT</SelectItem>
+            <SelectItem value="RESERVED">RESERVED</SelectItem>
           </SelectContent>
         </Select>
       </PageHeader>
@@ -121,6 +122,7 @@ export default function Stock() {
               <SelectContent>
                 <SelectItem value="IN">IN (Entry)</SelectItem>
                 <SelectItem value="OUT">OUT (Exit)</SelectItem>
+                <SelectItem value="RESERVED">RESERVED (Task Assignment)</SelectItem>
               </SelectContent>
             </Select>
           </div>
