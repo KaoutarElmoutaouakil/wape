@@ -109,6 +109,9 @@ export default function Documents() {
             <SelectItem value="invoice">Invoice</SelectItem>
             <SelectItem value="plan">Plan</SelectItem>
             <SelectItem value="specification">Specification</SelectItem>
+            <SelectItem value="BL">BL</SelectItem>
+            <SelectItem value="BC">BC</SelectItem>
+            <SelectItem value="photo">Photo</SelectItem>
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
