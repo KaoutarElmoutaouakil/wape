@@ -47,44 +47,52 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import ProjectDetails from './pages/ProjectDetails';
-import Tasks from './pages/Tasks';
-import TaskDetails from './pages/TaskDetails';
-import Personnel from './pages/Personnel';
-import Tools from './pages/Tools';
+import Administration from './pages/Administration';
 import Articles from './pages/Articles';
-import Stock from './pages/Stock';
+import Communication from './pages/Communication';
+import Dashboard from './pages/Dashboard';
+import Documents from './pages/Documents';
 import Expenses from './pages/Expenses';
 import Finance from './pages/Finance';
-import Plans from './pages/Plans';
-import Documents from './pages/Documents';
 import NonConformities from './pages/NonConformities';
-import Communication from './pages/Communication';
+import Personnel from './pages/Personnel';
+import Plans from './pages/Plans';
+import ProjectDetails from './pages/ProjectDetails';
+import Projects from './pages/Projects';
 import Reporting from './pages/Reporting';
-import Administration from './pages/Administration';
+import Stock from './pages/Stock';
+import TaskDetails from './pages/TaskDetails';
+import Tasks from './pages/Tasks';
+import Tools from './pages/Tools';
+import Reception from './pages/Reception';
+import Subcontractors from './pages/Subcontractors';
+import Attachments from './pages/Attachments';
+import Invoices from './pages/Invoices';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Projects": Projects,
-    "ProjectDetails": ProjectDetails,
-    "Tasks": Tasks,
-    "TaskDetails": TaskDetails,
-    "Personnel": Personnel,
-    "Tools": Tools,
+    "Administration": Administration,
     "Articles": Articles,
-    "Stock": Stock,
+    "Communication": Communication,
+    "Dashboard": Dashboard,
+    "Documents": Documents,
     "Expenses": Expenses,
     "Finance": Finance,
-    "Plans": Plans,
-    "Documents": Documents,
     "NonConformities": NonConformities,
-    "Communication": Communication,
+    "Personnel": Personnel,
+    "Plans": Plans,
+    "ProjectDetails": ProjectDetails,
+    "Projects": Projects,
     "Reporting": Reporting,
-    "Administration": Administration,
+    "Stock": Stock,
+    "TaskDetails": TaskDetails,
+    "Tasks": Tasks,
+    "Tools": Tools,
+    "Reception": Reception,
+    "Subcontractors": Subcontractors,
+    "Attachments": Attachments,
+    "Invoices": Invoices,
 }
 
 export const pagesConfig = {
