@@ -63,16 +63,19 @@ export default function Stock() {
   const columns = [
     { header: "Date", cell: (row) => row.date ? format(new Date(row.date), "MMM d, yyyy") : format(new Date(row.created_date), "MMM d, yyyy") },
     { header: "Article", accessor: "article_name" },
-    { header: "Type", cell: (row) => (
-      <Badge variant="outline" className={row.movement_type === "IN" ? "bg-success/10 text-success border-success/20 text-xs" : "bg-destructive/10 text-destructive border-destructive/20 text-xs"}>
-        {row.movement_type}
-      </Badge>
-    )},
-    { header: "Quantity", cell: (row) => (
-      <span className={`font-semibold ${row.movement_type === "IN" ? "text-success" : "text-destructive"}`}>
-        {row.movement_type === "IN" ? "+" : "-"}{row.quantity}
-      </span>
-    )},
+    { header: "Type", cell: (row) => {
+      const colors = {
+        IN: "bg-success/10 text-success border-success/20",
+        OUT: "bg-destructive/10 text-destructive border-destructive/20",
+        RESERVED: "bg-warning/10 text-warning border-warning/20",
+      };
+      return <Badge variant="outline" className={`text-xs ${colors[row.movement_type] || ""}`}>{row.movement_type}</Badge>;
+    }},
+    { header: "Quantity", cell: (row) => {
+      const color = row.movement_type === "IN" ? "text-success" : row.movement_type === "RESERVED" ? "text-warning" : "text-destructive";
+      const sign = row.movement_type === "IN" ? "+" : row.movement_type === "RESERVED" ? "~" : "-";
+      return <span className={`font-semibold ${color}`}>{sign}{row.quantity}</span>;
+    }},
     { header: "Project", accessor: "project_name" },
     { header: "Responsible", accessor: "responsible" },
     { header: "Notes", cell: (row) => <span className="text-xs text-muted-foreground truncate max-w-[120px] block">{row.notes}</span> },
