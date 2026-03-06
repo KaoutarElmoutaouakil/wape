@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Map, CheckSquare, Users, Wrench, Package,
   ShoppingCart, DollarSign, Receipt, FileText, AlertTriangle, MessageSquare,
   BarChart3, Settings, ChevronDown, ChevronRight, HardHat, Menu, X,
-  Truck, Building2, Paperclip
+  Truck, Building2, Paperclip, ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
