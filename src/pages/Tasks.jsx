@@ -43,7 +43,18 @@ export default function Tasks() {
   const { data: tools = [] } = useQuery({ queryKey: ["tools"], queryFn: () => base44.entities.Tool.list() });
 
   const updateTaskStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.Task.update(id, { status }),
+    mutationFn: async ({ id, status }) => {
+      await base44.entities.Task.update(id, { status });
+      // Auto-update project progress
+      const task = tasks.find(t => t.id === id);
+      if (task?.project_id) {
+        const projectTasks = tasks.map(t => t.id === id ? { ...t, status } : t).filter(t => t.project_id === task.project_id);
+        const completed = projectTasks.filter(t => t.status === "completed").length;
+        const progress = projectTasks.length > 0 ? Math.round((completed / projectTasks.length) * 100) : 0;
+        await base44.entities.Project.update(task.project_id, { progress });
+        queryClient.invalidateQueries({ queryKey: ["projects"] });
+      }
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
