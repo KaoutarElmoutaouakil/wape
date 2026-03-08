@@ -18,13 +18,15 @@ const navItems = [
     name: "Resources", icon: Users, children: [
       { name: "Personnel", icon: Users, page: "Personnel" },
       { name: "Tools", icon: Wrench, page: "Tools" },
+    ]
+  },
   {
-  name: "Warehouse", icon: Package, children: [
-    { name: "Articles", icon: ShoppingCart, page: "Articles" },
-    { name: "Stock", icon: Package, page: "Stock" },
-    { name: "Purchase Orders", icon: ClipboardList, page: "PurchaseOrders" },
-    { name: "Reception", icon: Truck, page: "Reception" },
-  ]
+    name: "Warehouse", icon: Package, children: [
+      { name: "Articles", icon: ShoppingCart, page: "Articles" },
+      { name: "Stock", icon: Package, page: "Stock" },
+      { name: "Purchase Orders", icon: ClipboardList, page: "PurchaseOrders" },
+      { name: "Reception", icon: Truck, page: "Reception" },
+    ]
   },
   {
     name: "Finance", icon: DollarSign, children: [
