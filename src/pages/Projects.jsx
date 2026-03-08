@@ -28,10 +28,30 @@ export default function Projects() {
     queryFn: () => base44.entities.Project.list("-created_date"),
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => base44.entities.Client.list(),
+  });
+
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: () => base44.entities.Task.list(),
+  });
+
   const saveMutation = useMutation({
-    mutationFn: (data) => editing
-      ? base44.entities.Project.update(editing.id, data)
-      : base44.entities.Project.create(data),
+    mutationFn: (data) => {
+      // Auto-calculate progress from tasks if project exists
+      if (editing) {
+        const projectTasks = allTasks.filter(t => t.project_id === editing.id);
+        if (projectTasks.length > 0) {
+          const completed = projectTasks.filter(t => t.status === "completed").length;
+          data.progress = Math.round((completed / projectTasks.length) * 100);
+        }
+      }
+      return editing
+        ? base44.entities.Project.update(editing.id, data)
+        : base44.entities.Project.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setShowForm(false);
@@ -124,7 +144,16 @@ export default function Projects() {
           </div>
           <div>
             <Label>Client</Label>
-            <Input value={form.client || ""} onChange={(e) => setForm({ ...form, client: e.target.value })} />
+            <Select value={form.client_id || ""} onValueChange={(v) => {
+              const c = clients.find(x => x.id === v);
+              setForm({ ...form, client_id: v, client: c?.name || "" });
+            }}>
+              <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>No client</SelectItem>
+                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}{c.company_name ? ` — ${c.company_name}` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Location</Label>
@@ -162,6 +191,13 @@ export default function Projects() {
           <div>
             <Label>Progress (%)</Label>
             <Input type="number" min="0" max="100" value={form.progress || 0} onChange={(e) => setForm({ ...form, progress: parseInt(e.target.value) || 0 })} />
+            {editing && (() => {
+              const projectTasks = allTasks.filter(t => t.project_id === editing.id);
+              if (projectTasks.length === 0) return null;
+              const completed = projectTasks.filter(t => t.status === "completed").length;
+              const auto = Math.round((completed / projectTasks.length) * 100);
+              return <p className="text-xs text-muted-foreground mt-1">Auto from tasks: {completed}/{projectTasks.length} completed = {auto}%</p>;
+            })()}
           </div>
           <div className="col-span-2">
             <Label>Description</Label>

@@ -29,6 +29,7 @@ export default function PurchaseOrders() {
   });
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
   const { data: articles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => base44.entities.Article.list() });
+  const { data: suppliers = [] } = useQuery({ queryKey: ["suppliers"], queryFn: () => base44.entities.Supplier.list() });
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -118,7 +119,20 @@ export default function PurchaseOrders() {
             </div>
             <div>
               <Label>Supplier *</Label>
-              <Input value={form.supplier || ""} onChange={(e) => setForm({ ...form, supplier: e.target.value })} />
+              <Select value={form.supplier_id || ""} onValueChange={(v) => {
+                const s = suppliers.find(x => x.id === v);
+                setForm({ ...form, supplier_id: v, supplier: s?.name || s?.company_name || "" });
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select supplier" /></SelectTrigger>
+                <SelectContent>
+                  {suppliers.filter(s => s.status === "active").map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}{s.company_name ? ` — ${s.company_name}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!form.supplier_id && (
+                <Input className="mt-1" placeholder="Or type supplier name manually" value={form.supplier || ""} onChange={(e) => setForm({ ...form, supplier: e.target.value })} />
+              )}
             </div>
             <div>
               <Label>Project</Label>
