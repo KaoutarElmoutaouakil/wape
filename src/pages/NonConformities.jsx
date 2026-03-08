@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Upload, X, Image } from "lucide-react";
+import { Upload, X, Image, List, Kanban } from "lucide-react";
+import NCKanbanBoard from "@/components/nc/NCKanbanBoard";
 
 export default function NonConformities() {
   const [search, setSearch] = useState("");
@@ -24,6 +25,7 @@ export default function NonConformities() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ status: "open", severity: "medium", photos: [], assigned_personnel: [] });
   const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState("list");
   const queryClient = useQueryClient();
 
   const { data: ncs = [], isLoading } = useQuery({ queryKey: ["ncs"], queryFn: () => base44.entities.NonConformity.list("-created_date") });
@@ -33,6 +35,11 @@ export default function NonConformities() {
 
   const projectPlans = plans.filter(p => p.project_id === form.project_id);
   const selectedPlan = plans.find(p => p.id === form.plan_id);
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => base44.entities.NonConformity.update(id, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ncs"] }),
+  });
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -95,7 +102,7 @@ export default function NonConformities() {
     { header: "Project", accessor: "project_name" },
     { header: "Plan", accessor: "plan_name" },
     { header: "Severity", cell: (row) => <StatusBadge status={row.severity} /> },
-    { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
+    { header: "Status", cell: (row) => <StatusBadge status={row.status || "open"} /> },
     { header: "Assigned", cell: (row) => <span className="text-xs">{(row.assigned_personnel || []).map(p => p.name).join(", ") || row.assigned_person || "—"}</span> },
     { header: "Photos", cell: (row) => <span className="text-xs">{(row.photos || []).length} photos</span> },
     { header: "Deadline", cell: (row) => row.deadline ? format(new Date(row.deadline), "MMM d, yyyy") : "—" },
@@ -106,10 +113,11 @@ export default function NonConformities() {
     <div className="space-y-4">
       <PageHeader title="Non Conformities" subtitle={`${ncs.filter(nc => nc.status === "open").length} open`} onAdd={() => openForm()} addLabel="New NC" searchValue={search} onSearch={setSearch}>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="in_review">In Review</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
@@ -125,9 +133,20 @@ export default function NonConformities() {
             <SelectItem value="critical">Critical</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex border border-border rounded-md overflow-hidden">
+          <Button variant={view === "list" ? "default" : "ghost"} size="sm" className="h-9 rounded-none" onClick={() => setView("list")}><List className="w-4 h-4" /></Button>
+          <Button variant={view === "kanban" ? "default" : "ghost"} size="sm" className="h-9 rounded-none gap-1" onClick={() => setView("kanban")}><Kanban className="w-4 h-4" />Kanban</Button>
+        </div>
       </PageHeader>
 
-      <DataTable columns={columns} data={filtered} isLoading={isLoading} />
+      {view === "list" && <DataTable columns={columns} data={filtered} isLoading={isLoading} />}
+      {view === "kanban" && (
+        <NCKanbanBoard
+          ncs={filtered}
+          onStatusChange={(id, status) => updateStatusMutation.mutate({ id, status })}
+          onEdit={openForm}
+        />
+      )}
 
       <FormDialog open={showForm} onOpenChange={setShowForm} title={editing ? "Edit Non Conformity" : "New Non Conformity"}>
         <div className="space-y-4">
