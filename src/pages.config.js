@@ -49,52 +49,58 @@
  */
 import Administration from './pages/Administration';
 import Articles from './pages/Articles';
+import Attachments from './pages/Attachments';
 import Communication from './pages/Communication';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Expenses from './pages/Expenses';
 import Finance from './pages/Finance';
+import Invoices from './pages/Invoices';
 import NonConformities from './pages/NonConformities';
 import Personnel from './pages/Personnel';
 import Plans from './pages/Plans';
 import ProjectDetails from './pages/ProjectDetails';
 import Projects from './pages/Projects';
+import PurchaseOrders from './pages/PurchaseOrders';
+import Reception from './pages/Reception';
 import Reporting from './pages/Reporting';
 import Stock from './pages/Stock';
+import Subcontractors from './pages/Subcontractors';
 import TaskDetails from './pages/TaskDetails';
 import Tasks from './pages/Tasks';
 import Tools from './pages/Tools';
-import Reception from './pages/Reception';
-import Subcontractors from './pages/Subcontractors';
-import Attachments from './pages/Attachments';
-import Invoices from './pages/Invoices';
-import PurchaseOrders from './pages/PurchaseOrders';
+import Suppliers from './pages/Suppliers';
+import Clients from './pages/Clients';
+import TrainingSupport from './pages/TrainingSupport';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Administration": Administration,
     "Articles": Articles,
+    "Attachments": Attachments,
     "Communication": Communication,
     "Dashboard": Dashboard,
     "Documents": Documents,
     "Expenses": Expenses,
     "Finance": Finance,
+    "Invoices": Invoices,
     "NonConformities": NonConformities,
     "Personnel": Personnel,
     "Plans": Plans,
     "ProjectDetails": ProjectDetails,
     "Projects": Projects,
+    "PurchaseOrders": PurchaseOrders,
+    "Reception": Reception,
     "Reporting": Reporting,
     "Stock": Stock,
+    "Subcontractors": Subcontractors,
     "TaskDetails": TaskDetails,
     "Tasks": Tasks,
     "Tools": Tools,
-    "Reception": Reception,
-    "Subcontractors": Subcontractors,
-    "Attachments": Attachments,
-    "Invoices": Invoices,
-    "PurchaseOrders": PurchaseOrders,
+    "Suppliers": Suppliers,
+    "Clients": Clients,
+    "TrainingSupport": TrainingSupport,
 }
 
 export const pagesConfig = {
