@@ -100,6 +100,18 @@ export default function Tasks() {
         queryClient.invalidateQueries({ queryKey: ["communications"] });
       }
 
+      // Auto-update project progress when task status changes
+      if (savedTask.project_id) {
+        const allProjectTasks = tasks.filter(t => t.project_id === savedTask.project_id);
+        // Include updated task in calculation
+        const updatedTasks = allProjectTasks.map(t => t.id === savedTask.id ? savedTask : t);
+        if (!editing) updatedTasks.push(savedTask);
+        const completedCount = updatedTasks.filter(t => t.status === "completed").length;
+        const progress = updatedTasks.length > 0 ? Math.round((completedCount / updatedTasks.length) * 100) : 0;
+        await base44.entities.Project.update(savedTask.project_id, { progress });
+        queryClient.invalidateQueries({ queryKey: ["projects"] });
+      }
+
       return savedTask;
     },
     onSuccess: () => {
