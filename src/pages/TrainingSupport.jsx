@@ -7,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusBadge from "@/components/shared/StatusBadge";
 import FormDialog from "@/components/shared/FormDialog";
 import { format } from "date-fns";
 import {
   BookOpen, Video, FileText, HelpCircle, Plus, Upload,
-  CheckCircle2, Clock, AlertCircle, LifeBuoy, GraduationCap
+  CheckCircle2, Clock, AlertCircle, LifeBuoy, GraduationCap,
+  FolderKanban, Package, DollarSign
 } from "lucide-react";
 
 const TUTORIALS = [
@@ -48,10 +48,6 @@ const TUTORIALS = [
     category: "Documents", duration: "4 min"
   },
 ];
-
-import {
-  FolderKanban, Package, DollarSign
-} from "lucide-react";
 
 export default function TrainingSupport() {
   const [tab, setTab] = useState("tutorials");
