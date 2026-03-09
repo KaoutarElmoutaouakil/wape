@@ -44,9 +44,38 @@ export default function Tasks() {
 
   const updateTaskStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
-      await base44.entities.Task.update(id, { status });
-      // Auto-update project progress and status
       const task = tasks.find(t => t.id === id);
+      await base44.entities.Task.update(id, { status });
+
+      // If task completed → create OUT stock movements for assigned articles
+      if (status === "completed" && task?.assigned_articles?.length) {
+        const freshArticles = await base44.entities.Article.list();
+        for (const art of task.assigned_articles) {
+          if (!art.id) continue;
+          await base44.entities.StockMovement.create({
+            article_id: art.id,
+            article_name: art.name,
+            movement_type: "OUT",
+            quantity: art.quantity || 1,
+            date: new Date().toISOString().split("T")[0],
+            project_id: task.project_id,
+            project_name: task.project_name,
+            task_id: id,
+            task_name: task.name,
+            notes: `Consumed on task completion: "${task.name}"`,
+          });
+          const found = freshArticles.find(a => a.id === art.id);
+          if (found) {
+            await base44.entities.Article.update(art.id, {
+              current_stock: Math.max(0, (found.current_stock || 0) - (art.quantity || 1)),
+            });
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+        queryClient.invalidateQueries({ queryKey: ["articles"] });
+      }
+
+      // Auto-update project progress and status
       if (task?.project_id) {
         const projectTasks = tasks.map(t => t.id === id ? { ...t, status } : t).filter(t => t.project_id === task.project_id);
         const completed = projectTasks.filter(t => t.status === "completed").length;
