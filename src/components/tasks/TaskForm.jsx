@@ -12,6 +12,7 @@ import { useCurrency } from "@/components/shared/currency";
 
 export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
   const queryClient = useQueryClient();
+  const { symbol } = useCurrency();
   const [form, setForm] = useState(task || {
     status: "todo", priority: "medium",
     assigned_personnel: [], assigned_articles: [], assigned_tools: [], assigned_subcontractors: [],
@@ -149,7 +150,7 @@ export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
               <span className="flex-1 font-medium">{p.name}</span>
               <span className="text-muted-foreground">Hours:</span>
               <Input type="number" className="w-16 h-6 text-xs" value={p.hours || ""} onChange={(e) => updatePersonnel(p.id, "hours", e.target.value)} />
-              <span className="text-muted-foreground">Cost €:</span>
+              <span className="text-muted-foreground">Cost {symbol}:</span>
               <Input type="number" className="w-20 h-6 text-xs" value={p.cost || ""} onChange={(e) => updatePersonnel(p.id, "cost", e.target.value)} />
               <X className="w-3 h-3 cursor-pointer text-muted-foreground" onClick={() => setForm({ ...form, assigned_personnel: form.assigned_personnel.filter(x => x.id !== p.id) })} />
             </div>
@@ -172,7 +173,7 @@ export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
               <span className="flex-1 font-medium">{a.name}</span>
               <span className="text-muted-foreground">Qty:</span>
               <Input type="number" className="w-16 h-6 text-xs" value={a.quantity || ""} onChange={(e) => updateArticle(a.id, "quantity", e.target.value)} />
-              <span className="text-muted-foreground">Unit €:</span>
+              <span className="text-muted-foreground">Unit {symbol}:</span>
               <Input type="number" className="w-20 h-6 text-xs" value={a.unit_cost || ""} onChange={(e) => updateArticle(a.id, "unit_cost", e.target.value)} />
               <X className="w-3 h-3 cursor-pointer text-muted-foreground" onClick={() => setForm({ ...form, assigned_articles: form.assigned_articles.filter(x => x.id !== a.id) })} />
             </div>
@@ -192,7 +193,7 @@ export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
           {(form.assigned_tools || []).map(t => (
             <div key={t.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-xs">
               <span className="flex-1 font-medium">{t.name}</span>
-              <span className="text-muted-foreground">Usage Cost €:</span>
+              <span className="text-muted-foreground">Usage Cost {symbol}:</span>
               <Input type="number" className="w-24 h-6 text-xs" value={t.cost || ""} onChange={(e) => updateTool(t.id, e.target.value)} />
               <X className="w-3 h-3 cursor-pointer text-muted-foreground" onClick={() => setForm({ ...form, assigned_tools: form.assigned_tools.filter(x => x.id !== t.id) })} />
             </div>
@@ -212,7 +213,7 @@ export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
           {(form.assigned_subcontractors || []).map(s => (
             <div key={s.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-xs">
               <span className="flex-1 font-medium">{s.name}</span>
-              <span className="text-muted-foreground">Cost €:</span>
+              <span className="text-muted-foreground">Cost {symbol}:</span>
               <Input type="number" className="w-24 h-6 text-xs" value={s.cost || ""} onChange={(e) => setForm({ ...form, assigned_subcontractors: form.assigned_subcontractors.map(x => x.id === s.id ? { ...x, cost: parseFloat(e.target.value) || 0 } : x) })} />
               <X className="w-3 h-3 cursor-pointer text-muted-foreground" onClick={() => setForm({ ...form, assigned_subcontractors: form.assigned_subcontractors.filter(x => x.id !== s.id) })} />
             </div>
@@ -224,12 +225,12 @@ export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
       {totalEst > 0 && (
         <div className="col-span-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Personnel: <strong>€{estPersonnel.toFixed(0)}</strong></span>
-            <span>Articles: <strong>€{estArticles.toFixed(0)}</strong></span>
-            <span>Tools: <strong>€{estTools.toFixed(0)}</strong></span>
-            {estSubs > 0 && <span>Subcontractors: <strong>€{estSubs.toFixed(0)}</strong></span>}
+            <span>Personnel: <strong>{symbol} {estPersonnel.toFixed(0)}</strong></span>
+            <span>Articles: <strong>{symbol} {estArticles.toFixed(0)}</strong></span>
+            <span>Tools: <strong>{symbol} {estTools.toFixed(0)}</strong></span>
+            {estSubs > 0 && <span>Subcontractors: <strong>{symbol} {estSubs.toFixed(0)}</strong></span>}
           </div>
-          <p className="mt-1 font-bold text-primary">Estimated Task Cost: €{totalEst.toFixed(0)}</p>
+          <p className="mt-1 font-bold text-primary">Estimated Task Cost: {symbol} {totalEst.toFixed(0)}</p>
         </div>
       )}
 
