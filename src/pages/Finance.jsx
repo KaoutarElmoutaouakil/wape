@@ -48,10 +48,10 @@ export default function Finance() {
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Budget" value={`€${(totalBudget / 1000).toFixed(0)}k`} icon={DollarSign} color="primary" />
-        <KPICard title="Total Spent" value={`€${(totalExpenses / 1000).toFixed(0)}k`} icon={TrendingDown} color="warning" />
-        <KPICard title="Remaining" value={`€${(remaining / 1000).toFixed(0)}k`} icon={TrendingUp} color={remaining >= 0 ? "success" : "destructive"} />
-        <KPICard title="Budget Used" value={`${usagePercent}%`} icon={AlertCircle} color={usagePercent > 90 ? "destructive" : usagePercent > 70 ? "warning" : "success"} />
+        <KPICard title="Total Budget" value={`€${totalBudget.toLocaleString()}`} icon={DollarSign} color="primary" subtitle={`${projects.length} projects`} />
+        <KPICard title="Total Spent" value={`€${totalExpenses.toLocaleString()}`} icon={TrendingDown} color="warning" subtitle={`${expenses.length} expenses`} />
+        <KPICard title="Remaining Budget" value={`€${remaining.toLocaleString()}`} icon={TrendingUp} color={remaining >= 0 ? "success" : "destructive"} subtitle={remaining < 0 ? "Over budget!" : "Available"} />
+        <KPICard title="Budget Used" value={`${usagePercent}%`} icon={AlertCircle} color={usagePercent > 90 ? "destructive" : usagePercent > 70 ? "warning" : "success"} subtitle={`${100 - usagePercent}% remaining`} />
       </div>
 
       {/* Charts */}
