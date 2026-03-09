@@ -156,8 +156,8 @@ export default function PurchaseOrders() {
               </Select>
             </div>
             <div>
-              <Label>Order Date</Label>
-              <Input type="date" value={form.order_date || ""} onChange={(e) => setForm({ ...form, order_date: e.target.value })} />
+              <Label>Order Date & Time</Label>
+              <Input type="datetime-local" value={form.order_date || ""} onChange={(e) => setForm({ ...form, order_date: e.target.value })} />
             </div>
             <div>
               <Label>Expected Delivery</Label>
