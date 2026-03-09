@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Upload, X, ExternalLink, Info } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
 
 export default function Attachments() {
   const [search, setSearch] = useState("");

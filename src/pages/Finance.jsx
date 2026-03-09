@@ -6,6 +6,7 @@ import KPICard from "@/components/shared/KPICard";
 import { Progress } from "@/components/ui/progress";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell

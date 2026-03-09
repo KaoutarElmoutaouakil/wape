@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { Download, Plus, X } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
+import CurrencyInput from "@/components/shared/CurrencyInput";
 
 export default function Invoices() {
   const [search, setSearch] = useState("");

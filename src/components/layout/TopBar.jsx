@@ -6,7 +6,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
+import { useCurrency, CURRENCIES } from "@/components/shared/currency";
 
 export default function TopBar({ onToggleSidebar, pageTitle }) {
   const [user, setUser] = useState(null);

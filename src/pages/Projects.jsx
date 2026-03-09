@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Eye } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
+import CurrencyInput from "@/components/shared/CurrencyInput";
 
 export default function Projects() {
   const [search, setSearch] = useState("");

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 import SearchableSelect from "@/components/shared/SearchableSelect";
+import { useCurrency } from "@/components/shared/currency";
 
 export default function TaskForm({ task, projects, onSave, onCancel, saving }) {
   const queryClient = useQueryClient();

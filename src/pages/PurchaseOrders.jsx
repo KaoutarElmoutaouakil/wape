@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { X, Package, Plus } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
+import CurrencyInput from "@/components/shared/CurrencyInput";
 
 export default function PurchaseOrders() {
   const [search, setSearch] = useState("");

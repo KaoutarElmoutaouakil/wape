@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Barcode, Eye } from "lucide-react";
+import { useCurrency } from "@/components/shared/currency";
+import BarcodeDisplay from "@/components/articles/BarcodeDisplay";
 
 function generateBarcodeId(name) {
   const base = name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4).padEnd(4, "X");
