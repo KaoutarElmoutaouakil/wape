@@ -57,6 +57,7 @@ export default function Reception() {
         const anyReceived = allItems.some(i => (i.received_qty || 0) > 0);
         if (allComplete) autoStatus = "complete";
         else if (anyReceived) autoStatus = "partial";
+        else autoStatus = "pending";
       }
 
       const payload = { ...data, status: autoStatus };
@@ -64,15 +65,17 @@ export default function Reception() {
         ? await base44.entities.Reception.update(editing.id, payload)
         : await base44.entities.Reception.create(payload);
 
-      // Create IN stock movements for received items
-      const prevStatus = editing?.status;
+      // Create IN stock movements for received items (only newly received delta)
       if (autoStatus === "complete" || autoStatus === "partial") {
-        // Only add movements for newly received quantities
+        // Fetch fresh article data to avoid stale cache issues
+        const freshArticles = await base44.entities.Article.list();
+
         for (const item of allItems) {
+          if (!item.article_id) continue;
           const prevItem = (editing?.items || []).find(i => i.article_id === item.article_id);
           const prevReceived = prevItem?.received_qty || 0;
           const newlyReceived = (item.received_qty || 0) - prevReceived;
-          if (newlyReceived > 0 && item.article_id) {
+          if (newlyReceived > 0) {
             await base44.entities.StockMovement.create({
               article_id: item.article_id,
               article_name: item.article_name,
@@ -81,10 +84,11 @@ export default function Reception() {
               date: data.delivery_date || new Date().toISOString().split("T")[0],
               project_id: data.project_id,
               project_name: data.project_name,
+              purchase_order_id: data.purchase_order_id,
               responsible: data.received_by,
-              notes: `Reception from ${data.supplier}`,
+              notes: `Reception from ${data.supplier} — ref: ${data.purchase_order_ref || rec.id?.slice(-6)}`,
             });
-            const art = articles.find(a => a.id === item.article_id);
+            const art = freshArticles.find(a => a.id === item.article_id);
             if (art) {
               await base44.entities.Article.update(art.id, {
                 current_stock: (art.current_stock || 0) + newlyReceived,
@@ -97,9 +101,10 @@ export default function Reception() {
       }
 
       // If partial, create a new pending reception for remaining quantities
-      if (autoStatus === "partial") {
+      // Only do this on CREATE (not edit) to avoid duplicating pending records
+      if (autoStatus === "partial" && !editing) {
         const remainingItems = allItems
-          .map(i => ({ ...i, ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0), received_qty: 0 }))
+          .map(i => ({ ...i, ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0), received_qty: 0, rejected_qty: 0 }))
           .filter(i => i.ordered_qty > 0);
         if (remainingItems.length > 0) {
           await base44.entities.Reception.create({
@@ -113,6 +118,27 @@ export default function Reception() {
             items: remainingItems,
             documents: [],
             notes: `Remaining delivery from partial reception — ${rec.id?.slice(-6)}`,
+          });
+        }
+      }
+
+      // If editing a pending → partial: create new pending for remaining
+      if (autoStatus === "partial" && editing && editing.status === "pending") {
+        const remainingItems = allItems
+          .map(i => ({ ...i, ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0), received_qty: 0, rejected_qty: 0 }))
+          .filter(i => i.ordered_qty > 0);
+        if (remainingItems.length > 0) {
+          await base44.entities.Reception.create({
+            supplier: data.supplier,
+            supplier_id: data.supplier_id,
+            purchase_order_id: data.purchase_order_id,
+            purchase_order_ref: data.purchase_order_ref,
+            project_id: data.project_id,
+            project_name: data.project_name,
+            status: "pending",
+            items: remainingItems,
+            documents: [],
+            notes: `Remaining delivery — ${rec.id?.slice(-6)}`,
           });
         }
       }
