@@ -113,24 +113,55 @@ export default function Tasks() {
         ? await base44.entities.Task.update(editing.id, { ...data, estimated_cost })
         : await base44.entities.Task.create({ ...data, estimated_cost });
 
-      // Create RESERVED stock movements for newly assigned articles
       const prevArticleIds = (editing?.assigned_articles || []).map(a => a.id);
       const newArticles = (data.assigned_articles || []).filter(a => !prevArticleIds.includes(a.id));
-      for (const art of newArticles) {
-        await base44.entities.StockMovement.create({
-          article_id: art.id,
-          article_name: art.name,
-          movement_type: "RESERVED",
-          quantity: art.quantity || 1,
-          date: new Date().toISOString().split("T")[0],
-          project_id: data.project_id,
-          project_name: data.project_name,
-          task_id: savedTask.id,
-          task_name: data.name,
-          notes: `Reserved for task "${data.name}"`,
-        });
+      const prevStatus = editing?.status;
+      const nowCompleted = data.status === "completed";
+      const wasAlreadyCompleted = prevStatus === "completed";
+
+      if (nowCompleted && !wasAlreadyCompleted) {
+        // Task just completed → OUT movements to consume stock
+        const freshArticles = await base44.entities.Article.list();
+        for (const art of (data.assigned_articles || [])) {
+          if (!art.id) continue;
+          await base44.entities.StockMovement.create({
+            article_id: art.id,
+            article_name: art.name,
+            movement_type: "OUT",
+            quantity: art.quantity || 1,
+            date: new Date().toISOString().split("T")[0],
+            project_id: data.project_id,
+            project_name: data.project_name,
+            task_id: savedTask.id,
+            task_name: data.name,
+            notes: `Consumed on task completion: "${data.name}"`,
+          });
+          const found = freshArticles.find(a => a.id === art.id);
+          if (found) {
+            await base44.entities.Article.update(art.id, {
+              current_stock: Math.max(0, (found.current_stock || 0) - (art.quantity || 1)),
+            });
+          }
+        }
+      } else {
+        // Create RESERVED stock movements for newly assigned articles (only when not completing)
+        for (const art of newArticles) {
+          await base44.entities.StockMovement.create({
+            article_id: art.id,
+            article_name: art.name,
+            movement_type: "RESERVED",
+            quantity: art.quantity || 1,
+            date: new Date().toISOString().split("T")[0],
+            project_id: data.project_id,
+            project_name: data.project_name,
+            task_id: savedTask.id,
+            task_name: data.name,
+            notes: `Reserved for task "${data.name}"`,
+          });
+        }
       }
-      if (newArticles.length) queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+      if (newArticles.length || nowCompleted) queryClient.invalidateQueries({ queryKey: ["stock-movements"] });
+      if (nowCompleted) queryClient.invalidateQueries({ queryKey: ["articles"] });
 
       // Notify assigned personnel
       if (!editing && data.assigned_personnel?.length) {
