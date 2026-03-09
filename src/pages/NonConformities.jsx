@@ -134,6 +134,7 @@ export default function NonConformities() {
 
   return (
     <div className="space-y-4">
+      <ImagePreviewModal url={previewImage} onClose={() => setPreviewImage(null)} />
       <PageHeader title="Non Conformities" subtitle={`${ncs.filter(nc => nc.status === "open").length} open`} onAdd={() => openForm()} addLabel="New NC" searchValue={search} onSearch={setSearch}>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
