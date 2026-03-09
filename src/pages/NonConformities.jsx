@@ -40,6 +40,7 @@ export default function NonConformities() {
   const [form, setForm] = useState({ status: "open", severity: "medium", photos: [], assigned_personnel: [] });
   const [uploading, setUploading] = useState(false);
   const [view, setView] = useState("list");
+  const [previewImage, setPreviewImage] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: ncs = [], isLoading } = useQuery({ queryKey: ["ncs"], queryFn: () => base44.entities.NonConformity.list("-created_date") });
