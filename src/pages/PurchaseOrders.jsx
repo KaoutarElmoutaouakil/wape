@@ -80,7 +80,7 @@ export default function PurchaseOrders() {
     { header: "Project", accessor: "project_name" },
     { header: "Items", cell: (row) => <span className="text-xs">{(row.items || []).length} articles</span> },
     { header: "Total", cell: (row) => <span className="font-semibold text-sm">€{(row.total_amount || 0).toLocaleString()}</span> },
-    { header: "Order Date", cell: (row) => row.order_date ? format(new Date(row.order_date), "MMM d, yyyy") : "—" },
+    { header: "Order Date", cell: (row) => row.order_date ? format(new Date(row.order_date), "MMM d, yyyy HH:mm") : "—" },
     { header: "Expected Delivery", cell: (row) => row.expected_delivery_date ? format(new Date(row.expected_delivery_date), "MMM d, yyyy") : "—" },
     { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
     { header: "", cell: (row) => <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button> },
