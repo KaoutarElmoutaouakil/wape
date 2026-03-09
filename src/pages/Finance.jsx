@@ -18,8 +18,10 @@ const COLORS = ["hsl(221,83%,53%)", "hsl(142,71%,45%)", "hsl(38,92%,50%)", "hsl(
 export default function Finance() {
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
+  const { data: attachments = [] } = useQuery({ queryKey: ["attachments"], queryFn: () => base44.entities.Attachment.list() });
 
   const totalBudget = projects.reduce((s, p) => s + (p.estimated_budget || 0), 0);
+  // Total spent = expenses (includes auto-created ones from approved attachments)
   const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const remaining = totalBudget - totalExpenses;
   const usagePercent = totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0;
@@ -29,7 +31,7 @@ export default function Finance() {
     const budget = p.estimated_budget || 0;
     const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
     return { ...p, spent, remaining: budget - spent, pct };
-  }).sort((a, b) => b.budget - a.budget);
+  }).sort((a, b) => (b.estimated_budget || 0) - (a.estimated_budget || 0));
 
   const byCategory = ["transport", "materials", "equipment", "extra_cost", "labor", "other"].map(c => ({
     name: c.replace("_", " "),
