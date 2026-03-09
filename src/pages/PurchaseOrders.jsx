@@ -23,6 +23,7 @@ export default function PurchaseOrders() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ status: "ordered", items: [] });
+  const { symbol, fmt } = useCurrency();
   const queryClient = useQueryClient();
 
   const { data: orders = [], isLoading } = useQuery({
@@ -81,7 +82,7 @@ export default function PurchaseOrders() {
     { header: "Order #", cell: (row) => <div><p className="font-medium">{row.order_number || `PO-${row.id?.slice(-6)}`}</p><p className="text-xs text-muted-foreground">{row.supplier}</p></div> },
     { header: "Project", accessor: "project_name" },
     { header: "Items", cell: (row) => <span className="text-xs">{(row.items || []).length} articles</span> },
-    { header: "Total", cell: (row) => <span className="font-semibold text-sm">€{(row.total_amount || 0).toLocaleString()}</span> },
+    { header: "Total", cell: (row) => <span className="font-semibold text-sm">{fmt(row.total_amount)}</span> },
     { header: "Order Date", cell: (row) => row.order_date ? format(new Date(row.order_date), "MMM d, yyyy HH:mm") : "—" },
     { header: "Expected Delivery", cell: (row) => row.expected_delivery_date ? format(new Date(row.expected_delivery_date), "MMM d, yyyy") : "—" },
     { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
@@ -180,19 +181,19 @@ export default function PurchaseOrders() {
                 <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-2">
                   <span className="col-span-4">Article</span>
                   <span className="col-span-2">Qty</span>
-                  <span className="col-span-3">Unit Price €</span>
-                  <span className="col-span-2">Total €</span>
+                  <span className="col-span-3">Unit Price ({symbol})</span>
+                  <span className="col-span-2">Total ({symbol})</span>
                 </div>
                 {form.items.map((item, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg bg-muted/30">
                     <span className="col-span-4 text-sm flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-muted-foreground shrink-0" />{item.article_name}</span>
                     <Input type="number" className="col-span-2 h-7 text-xs" value={item.quantity || ""} onChange={(e) => updateItem(i, "quantity", e.target.value)} />
                     <Input type="number" className="col-span-3 h-7 text-xs" value={item.unit_price || ""} onChange={(e) => updateItem(i, "unit_price", e.target.value)} />
-                    <span className="col-span-2 text-xs font-semibold">€{(item.total || 0).toFixed(0)}</span>
+                    <span className="col-span-2 text-xs font-semibold">{symbol} {(item.total || 0).toFixed(0)}</span>
                     <X className="col-span-1 w-3.5 h-3.5 cursor-pointer text-muted-foreground" onClick={() => setForm({ ...form, items: form.items.filter((_, idx) => idx !== i) })} />
                   </div>
                 ))}
-                <div className="text-right text-sm font-bold pt-2 pr-2">Total: €{totalAmount.toLocaleString()}</div>
+                <div className="text-right text-sm font-bold pt-2 pr-2">Total: {fmt(totalAmount)}</div>
               </div>
             )}
           </div>
