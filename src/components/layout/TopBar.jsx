@@ -12,6 +12,7 @@ import { useCurrency, CURRENCIES } from "@/components/shared/currency";
 
 export default function TopBar({ onToggleSidebar, pageTitle }) {
   const [user, setUser] = useState(null);
+  const { currency, setCurrency, CURRENCIES } = useCurrency();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -31,6 +32,17 @@ export default function TopBar({ onToggleSidebar, pageTitle }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search..." className="pl-9 w-64 bg-muted/50 border-0 focus-visible:ring-1" />
         </div>
+
+        <Select value={currency} onValueChange={setCurrency}>
+          <SelectTrigger className="w-20 h-8 text-xs border-border bg-muted/50">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CURRENCIES.map(c => (
+              <SelectItem key={c.code} value={c.code}>{c.code} {c.symbol}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Button variant="ghost" size="icon" className="text-muted-foreground relative">
           <Bell className="w-5 h-5" />
