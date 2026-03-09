@@ -50,6 +50,7 @@
 import Administration from './pages/Administration';
 import Articles from './pages/Articles';
 import Attachments from './pages/Attachments';
+import Clients from './pages/Clients';
 import Communication from './pages/Communication';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
@@ -66,11 +67,10 @@ import Reception from './pages/Reception';
 import Reporting from './pages/Reporting';
 import Stock from './pages/Stock';
 import Subcontractors from './pages/Subcontractors';
+import Suppliers from './pages/Suppliers';
 import TaskDetails from './pages/TaskDetails';
 import Tasks from './pages/Tasks';
 import Tools from './pages/Tools';
-import Suppliers from './pages/Suppliers';
-import Clients from './pages/Clients';
 import TrainingSupport from './pages/TrainingSupport';
 import __Layout from './Layout.jsx';
 
@@ -79,6 +79,7 @@ export const PAGES = {
     "Administration": Administration,
     "Articles": Articles,
     "Attachments": Attachments,
+    "Clients": Clients,
     "Communication": Communication,
     "Dashboard": Dashboard,
     "Documents": Documents,
@@ -95,11 +96,10 @@ export const PAGES = {
     "Reporting": Reporting,
     "Stock": Stock,
     "Subcontractors": Subcontractors,
+    "Suppliers": Suppliers,
     "TaskDetails": TaskDetails,
     "Tasks": Tasks,
     "Tools": Tools,
-    "Suppliers": Suppliers,
-    "Clients": Clients,
     "TrainingSupport": TrainingSupport,
 }
 

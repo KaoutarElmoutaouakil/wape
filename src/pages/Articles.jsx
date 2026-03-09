@@ -10,11 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Barcode, Eye } from "lucide-react";
+
+function generateBarcodeId(name) {
+  const base = name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4).padEnd(4, "X");
+  const rand = Math.floor(Math.random() * 900000) + 100000;
+  return `${base}-${rand}`;
+}
 
 export default function Articles() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
   const queryClient = useQueryClient();
@@ -24,10 +31,21 @@ export default function Articles() {
     queryFn: () => base44.entities.Article.list("-created_date"),
   });
 
+  const { data: movements = [] } = useQuery({
+    queryKey: ["stock-movements"],
+    queryFn: () => base44.entities.StockMovement.list("-created_date"),
+  });
+
   const saveMutation = useMutation({
-    mutationFn: (data) => editing
-      ? base44.entities.Article.update(editing.id, data)
-      : base44.entities.Article.create(data),
+    mutationFn: (data) => {
+      const payload = { ...data };
+      if (!payload.barcode_id && payload.name) {
+        payload.barcode_id = generateBarcodeId(payload.name);
+      }
+      return editing
+        ? base44.entities.Article.update(editing.id, payload)
+        : base44.entities.Article.create(payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       setShowForm(false);
@@ -41,6 +59,14 @@ export default function Articles() {
     setShowForm(true);
   };
 
+  const getArticleStats = (articleId) => {
+    const artMovements = movements.filter(m => m.article_id === articleId);
+    const inQty = artMovements.filter(m => m.movement_type === "IN").reduce((s, m) => s + (m.quantity || 0), 0);
+    const reserved = artMovements.filter(m => m.movement_type === "RESERVED").reduce((s, m) => s + (m.quantity || 0), 0);
+    const out = artMovements.filter(m => m.movement_type === "OUT").reduce((s, m) => s + (m.quantity || 0), 0);
+    return { inQty, reserved, consumed: out };
+  };
+
   const filtered = articles.filter(a =>
     !search || a.name?.toLowerCase().includes(search.toLowerCase()) || a.category?.toLowerCase().includes(search.toLowerCase())
   );
@@ -52,6 +78,10 @@ export default function Articles() {
         <p className="text-xs text-muted-foreground">{row.category}</p>
       </div>
     )},
+    { header: "Barcode", cell: (row) => row.barcode_id
+      ? <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded flex items-center gap-1"><Barcode className="w-3 h-3" />{row.barcode_id}</span>
+      : <span className="text-xs text-muted-foreground">—</span>
+    },
     { header: "Unit", accessor: "unit" },
     { header: "Stock", cell: (row) => {
       const low = (row.current_stock || 0) <= (row.minimum_stock || 0) && row.minimum_stock > 0;
@@ -64,7 +94,6 @@ export default function Articles() {
     }},
     { header: "Min Stock", accessor: "minimum_stock" },
     { header: "Purchase Cost", cell: (row) => row.purchase_cost ? `€${row.purchase_cost}` : "—" },
-    { header: "Location", accessor: "storage_location" },
     { header: "Status", cell: (row) => {
       const low = (row.current_stock || 0) <= (row.minimum_stock || 0) && row.minimum_stock > 0;
       return low
@@ -72,9 +101,15 @@ export default function Articles() {
         : <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-xs">OK</Badge>;
     }},
     { header: "", cell: (row) => (
-      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button>
+      <div className="flex gap-1">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowDetail(row)}><Eye className="w-4 h-4" /></Button>
+        <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button>
+      </div>
     )},
   ];
+
+  const detailArticle = showDetail;
+  const stats = detailArticle ? getArticleStats(detailArticle.id) : {};
 
   return (
     <div className="space-y-4">
@@ -89,6 +124,46 @@ export default function Articles() {
 
       <DataTable columns={columns} data={filtered} isLoading={isLoading} />
 
+      {/* Detail Dialog */}
+      {showDetail && (
+        <FormDialog open={!!showDetail} onOpenChange={() => setShowDetail(null)} title={showDetail.name}>
+          <div className="space-y-4">
+            {showDetail.barcode_id && (
+              <div className="p-4 rounded-lg bg-muted/30 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Barcode ID</p>
+                <p className="font-mono text-xl font-bold tracking-widest">{showDetail.barcode_id}</p>
+                <div className="mt-2 flex justify-center gap-0.5">
+                  {showDetail.barcode_id.split("").map((c, i) => (
+                    <div key={i} className={`bg-foreground rounded-sm ${c === "-" ? "w-3 h-6 opacity-0" : `w-${Math.random() > 0.5 ? "1" : "0.5"} h-8`}`} style={{ width: `${2 + Math.random() * 2}px`, height: "32px" }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg bg-success/10 border border-success/20 text-center">
+                <p className="text-2xl font-bold text-success">{showDetail.current_stock || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Total Stock</p>
+              </div>
+              <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-center">
+                <p className="text-2xl font-bold text-warning">{stats.reserved || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Reserved</p>
+              </div>
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
+                <p className="text-2xl font-bold text-destructive">{stats.consumed || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Consumed (OUT)</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-muted-foreground">Category:</span> <span className="font-medium">{showDetail.category || "—"}</span></div>
+              <div><span className="text-muted-foreground">Unit:</span> <span className="font-medium">{showDetail.unit || "—"}</span></div>
+              <div><span className="text-muted-foreground">Min Stock:</span> <span className="font-medium">{showDetail.minimum_stock || 0}</span></div>
+              <div><span className="text-muted-foreground">Purchase Cost:</span> <span className="font-medium">{showDetail.purchase_cost ? `€${showDetail.purchase_cost}` : "—"}</span></div>
+              <div className="col-span-2"><span className="text-muted-foreground">Location:</span> <span className="font-medium">{showDetail.storage_location || "—"}</span></div>
+            </div>
+          </div>
+        </FormDialog>
+      )}
+
       <FormDialog open={showForm} onOpenChange={setShowForm} title={editing ? "Edit Article" : "New Article"}>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -98,6 +173,15 @@ export default function Articles() {
           <div>
             <Label>Category</Label>
             <Input value={form.category || ""} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          </div>
+          <div>
+            <Label>Barcode ID</Label>
+            <div className="flex gap-2">
+              <Input value={form.barcode_id || ""} onChange={(e) => setForm({ ...form, barcode_id: e.target.value })} placeholder="Auto-generated on save" />
+              <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, barcode_id: generateBarcodeId(form.name || "ART") })}>
+                <Barcode className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           <div>
             <Label>Unit</Label>

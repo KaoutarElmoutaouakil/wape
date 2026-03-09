@@ -12,11 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import SearchableSelect from "@/components/shared/SearchableSelect";
+import { Eye } from "lucide-react";
 
 export default function Stock() {
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(null);
   const [form, setForm] = useState({ movement_type: "IN", quantity: 1 });
   const queryClient = useQueryClient();
 
@@ -38,7 +41,6 @@ export default function Stock() {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       const mv = await base44.entities.StockMovement.create(data);
-      // Update article stock
       const article = articles.find(a => a.id === data.article_id);
       if (article) {
         const delta = data.movement_type === "IN" ? data.quantity : -data.quantity;
@@ -57,7 +59,8 @@ export default function Stock() {
   const filtered = movements.filter(m => {
     const matchSearch = !search || m.article_name?.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || m.movement_type === typeFilter;
-    return matchSearch && matchType;
+    const matchDate = !dateFilter || m.date === dateFilter || m.created_date?.startsWith(dateFilter);
+    return matchSearch && matchType && matchDate;
   });
 
   const columns = [
@@ -77,8 +80,10 @@ export default function Stock() {
       return <span className={`font-semibold ${color}`}>{sign}{row.quantity}</span>;
     }},
     { header: "Project", accessor: "project_name" },
+    { header: "Task", accessor: "task_name" },
     { header: "Responsible", accessor: "responsible" },
     { header: "Notes", cell: (row) => <span className="text-xs text-muted-foreground truncate max-w-[120px] block">{row.notes}</span> },
+    { header: "", cell: (row) => <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowDetail(row)}><Eye className="w-4 h-4" /></Button> },
   ];
 
   return (
@@ -91,6 +96,13 @@ export default function Stock() {
         searchValue={search}
         onSearch={setSearch}
       >
+        <Input
+          type="date"
+          className="w-36 bg-card h-9"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          placeholder="Filter by date"
+        />
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -103,6 +115,29 @@ export default function Stock() {
       </PageHeader>
 
       <DataTable columns={columns} data={filtered} isLoading={isLoading} />
+
+      {/* Detail Dialog */}
+      {showDetail && (
+        <FormDialog open={!!showDetail} onOpenChange={() => setShowDetail(null)} title="Movement Details">
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div><span className="text-muted-foreground">Article:</span> <span className="font-medium">{showDetail.article_name}</span></div>
+              <div><span className="text-muted-foreground">Type:</span> <span className="font-medium">{showDetail.movement_type}</span></div>
+              <div><span className="text-muted-foreground">Quantity:</span> <span className="font-medium">{showDetail.quantity}</span></div>
+              <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{showDetail.date ? format(new Date(showDetail.date), "MMM d, yyyy") : "—"}</span></div>
+              <div><span className="text-muted-foreground">Project:</span> <span className="font-medium">{showDetail.project_name || "—"}</span></div>
+              <div><span className="text-muted-foreground">Task:</span> <span className="font-medium">{showDetail.task_name || "—"}</span></div>
+              <div><span className="text-muted-foreground">Responsible:</span> <span className="font-medium">{showDetail.responsible || "—"}</span></div>
+            </div>
+            {showDetail.notes && (
+              <div className="p-3 rounded-lg bg-muted/30">
+                <p className="text-muted-foreground text-xs mb-1">Notes</p>
+                <p>{showDetail.notes}</p>
+              </div>
+            )}
+          </div>
+        </FormDialog>
+      )}
 
       <FormDialog open={showForm} onOpenChange={setShowForm} title="New Stock Movement">
         <div className="grid grid-cols-2 gap-4">
