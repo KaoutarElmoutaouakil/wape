@@ -20,6 +20,7 @@ export default function Invoices() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ type: "client", status: "draft", items: [], tax_rate: 20 });
+  const { symbol, fmt } = useCurrency();
   const queryClient = useQueryClient();
 
   const { data: invoices = [], isLoading } = useQuery({
@@ -96,7 +97,7 @@ export default function Invoices() {
     { header: "Invoice #", cell: (row) => <div><p className="font-medium font-mono text-xs">{row.invoice_number || row.id?.substring(0, 8)}</p><StatusBadge status={row.type} /></div> },
     { header: "Recipient", accessor: "recipient" },
     { header: "Project", accessor: "project_name" },
-    { header: "Amount", cell: (row) => <span className="font-semibold">€{(row.amount || 0).toLocaleString()}</span> },
+    { header: "Amount", cell: (row) => <span className="font-semibold">{fmt(row.amount)}</span> },
     { header: "Date", cell: (row) => row.date ? format(new Date(row.date), "MMM d, yyyy") : "—" },
     { header: "Due", cell: (row) => row.due_date ? format(new Date(row.due_date), "MMM d, yyyy") : "—" },
     { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
@@ -179,9 +180,9 @@ export default function Invoices() {
               ))}
             </div>
             <div className="mt-3 p-3 rounded-lg bg-muted/30 text-sm space-y-1 text-right">
-              <p>Subtotal: <span className="font-medium">€{subtotal.toFixed(2)}</span></p>
-              <p>Tax ({form.tax_rate || 20}%): <span className="font-medium">€{tax.toFixed(2)}</span></p>
-              <p className="text-base font-bold">Total: €{total.toFixed(2)}</p>
+              <p>Subtotal: <span className="font-medium">{symbol} {subtotal.toFixed(2)}</span></p>
+              <p>Tax ({form.tax_rate || 20}%): <span className="font-medium">{symbol} {tax.toFixed(2)}</span></p>
+              <p className="text-base font-bold">Total: {symbol} {total.toFixed(2)}</p>
             </div>
             <p className="text-xs text-muted-foreground mt-1">Note: "Amount" field auto-filled with subtotal</p>
           </div>
