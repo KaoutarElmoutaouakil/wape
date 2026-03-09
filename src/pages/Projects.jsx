@@ -23,6 +23,7 @@ export default function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const { symbol, fmt } = useCurrency();
   const queryClient = useQueryClient();
 
   const { data: projects = [], isLoading } = useQuery({
@@ -94,7 +95,7 @@ export default function Projects() {
         {row.end_date ? format(new Date(row.end_date), "MMM d, yy") : "—"}
       </span>
     )},
-    { header: "Budget", cell: (row) => row.estimated_budget ? `€${row.estimated_budget.toLocaleString()}` : "—" },
+    { header: "Budget", cell: (row) => row.estimated_budget ? fmt(row.estimated_budget) : "—" },
     { header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
     { header: "Progress", cell: (row) => (
       <div className="flex items-center gap-2 min-w-[120px]">
@@ -170,8 +171,13 @@ export default function Projects() {
             <Input type="date" value={form.end_date || ""} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
           </div>
           <div>
-            <Label>Estimated Budget (€)</Label>
-            <Input type="number" value={form.estimated_budget || ""} onChange={(e) => setForm({ ...form, estimated_budget: parseFloat(e.target.value) || 0 })} />
+            <Label>Estimated Budget</Label>
+            <CurrencyInput
+              value={form.estimated_budget}
+              onChange={(v) => setForm({ ...form, estimated_budget: v })}
+              currency={form.budget_currency}
+              onCurrencyChange={(c) => setForm({ ...form, budget_currency: c })}
+            />
           </div>
           <div>
             <Label>Status</Label>
