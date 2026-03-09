@@ -60,12 +60,15 @@ export default function Attachments() {
         ? taskEstimatedCost
         : (data.real_personnel_cost || 0) + (data.real_materials_cost || 0) + expensesTotal;
 
+      const wasApproved = editing?.validation_status === "approved";
+      const isNowApproved = data.validation_status === "approved";
+
       const savedAtt = editing
         ? await base44.entities.Attachment.update(editing.id, { ...data, real_cost })
         : await base44.entities.Attachment.create({ ...data, real_cost });
 
-      // If validated and subcontractor linked → create/update invoice
-      if (data.validation_status === "approved" && data.subcontractor_id) {
+      // On approval (first time) → create invoice with status "draft" (pending invoice generation)
+      if (isNowApproved && !wasApproved) {
         const sub = subcontractors.find(s => s.id === data.subcontractor_id);
         await base44.entities.Invoice.create({
           invoice_number: `ATT-${savedAtt.id?.slice(-6)}`,
@@ -74,28 +77,34 @@ export default function Attachments() {
           project_name: data.project_name,
           task_id: data.task_id,
           task_name: data.task_name,
-          recipient: sub?.company_name || data.subcontractor_name,
+          recipient: sub?.company_name || data.subcontractor_name || data.task_name,
           amount: real_cost,
           date: new Date().toISOString().split("T")[0],
-          status: "sent",
-          notes: `Auto-generated from validated attachment ${savedAtt.id?.slice(-6)}`,
+          status: "draft",
+          notes: `Auto-generated from validated attachment — Task: ${data.task_name}`,
+          items: [
+            ...(taskCostBreakdown?.personnel ? [{ description: "Personnel costs", quantity: 1, unit_price: taskCostBreakdown.personnel }] : []),
+            ...(taskCostBreakdown?.articles ? [{ description: "Materials/Articles", quantity: 1, unit_price: taskCostBreakdown.articles }] : []),
+            ...(taskCostBreakdown?.tools ? [{ description: "Tools usage", quantity: 1, unit_price: taskCostBreakdown.tools }] : []),
+          ],
         });
         queryClient.invalidateQueries({ queryKey: ["invoices"] });
       }
 
-      // Reduce project budget if cost changed
-      if (real_cost && data.project_id) {
-        const project = projects.find(p => p.id === data.project_id);
-        if (project && project.estimated_budget) {
-          const prevCost = editing?.real_cost || 0;
-          const delta = real_cost - prevCost;
-          if (delta !== 0) {
-            await base44.entities.Project.update(data.project_id, {
-              estimated_budget: Math.max(0, (project.estimated_budget || 0) - delta),
-            });
-            queryClient.invalidateQueries({ queryKey: ["projects"] });
-          }
-        }
+      // Create an Expense to track "Total Spent" in Finance
+      if (isNowApproved && !wasApproved && real_cost > 0 && data.project_id) {
+        await base44.entities.Expense.create({
+          name: `Task completion: ${data.task_name}`,
+          category: "labor",
+          amount: real_cost,
+          date: new Date().toISOString().split("T")[0],
+          project_id: data.project_id,
+          project_name: data.project_name,
+          task_id: data.task_id,
+          task_name: data.task_name,
+          notes: `Auto-created from attachment validation`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["expenses"] });
       }
 
       return savedAtt;
