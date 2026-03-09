@@ -17,6 +17,7 @@ import { createPageUrl } from "@/utils";
 const COLORS = ["hsl(221,83%,53%)", "hsl(142,71%,45%)", "hsl(38,92%,50%)", "hsl(0,84%,60%)", "hsl(199,89%,48%)"];
 
 export default function Finance() {
+  const { symbol, fmt } = useCurrency();
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
   const { data: attachments = [] } = useQuery({ queryKey: ["attachments"], queryFn: () => base44.entities.Attachment.list() });
@@ -49,9 +50,9 @@ export default function Finance() {
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Budget" value={`€${totalBudget.toLocaleString()}`} icon={DollarSign} color="primary" subtitle={`${projects.length} projects`} />
-        <KPICard title="Total Spent" value={`€${totalExpenses.toLocaleString()}`} icon={TrendingDown} color="warning" subtitle={`${expenses.length} expenses`} />
-        <KPICard title="Remaining Budget" value={`€${remaining.toLocaleString()}`} icon={TrendingUp} color={remaining >= 0 ? "success" : "destructive"} subtitle={remaining < 0 ? "Over budget!" : "Available"} />
+        <KPICard title="Total Budget" value={fmt(totalBudget)} icon={DollarSign} color="primary" subtitle={`${projects.length} projects`} />
+        <KPICard title="Total Spent" value={fmt(totalExpenses)} icon={TrendingDown} color="warning" subtitle={`${expenses.length} expenses`} />
+        <KPICard title="Remaining Budget" value={fmt(remaining)} icon={TrendingUp} color={remaining >= 0 ? "success" : "destructive"} subtitle={remaining < 0 ? "Over budget!" : "Available"} />
         <KPICard title="Budget Used" value={`${usagePercent}%`} icon={AlertCircle} color={usagePercent > 90 ? "destructive" : usagePercent > 70 ? "warning" : "success"} subtitle={`${100 - usagePercent}% remaining`} />
       </div>
 
@@ -83,7 +84,7 @@ export default function Finance() {
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                   {byCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v) => `€${v.toLocaleString()}`} />
+                <Tooltip formatter={(v) => fmt(v)} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -104,8 +105,8 @@ export default function Finance() {
                     <StatusBadge status={p.status} />
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
-                    <span className="text-warning font-semibold">€{p.spent.toLocaleString()}</span>
-                    <span> / €{(p.estimated_budget || 0).toLocaleString()}</span>
+                    <span className="text-warning font-semibold">{fmt(p.spent)}</span>
+                    <span> / {fmt(p.estimated_budget)}</span>
                     <span className={`ml-2 font-bold ${p.pct > 100 ? "text-destructive" : p.pct > 80 ? "text-warning" : "text-success"}`}>{p.pct}%</span>
                   </div>
                 </div>
