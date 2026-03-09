@@ -10,17 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { ExternalLink, Upload } from "lucide-react";
+import { ExternalLink, Upload, Eye, Download, FileText, X } from "lucide-react";
+
+const isImage = (url) => url && /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
 
 export default function Documents() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [moduleFilter, setModuleFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: documents = [], isLoading } = useQuery({
@@ -55,37 +60,55 @@ export default function Documents() {
     if (!file) return;
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm({ ...form, file_url });
+    setForm({ ...form, file_url, name: form.name || file.name });
     setUploading(false);
   };
 
   const filtered = documents.filter(d => {
     const matchSearch = !search || d.name?.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || d.type === typeFilter;
+    const matchModule = moduleFilter === "all" || d.source_module === moduleFilter;
     const matchProj = projectFilter === "all" || d.project_id === projectFilter;
-    return matchSearch && matchType && matchProj;
+    return matchSearch && matchType && matchModule && matchProj;
   });
 
   const columns = [
     { header: "Name", cell: (row) => (
-      <div>
-        <p className="font-medium">{row.name}</p>
-        <p className="text-xs text-muted-foreground">v{row.version} • {row.author}</p>
+      <div className="flex items-center gap-2">
+        {isImage(row.file_url)
+          ? <img src={row.file_url} className="w-8 h-8 rounded object-cover border border-border shrink-0" />
+          : <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-muted-foreground" /></div>
+        }
+        <div>
+          <p className="font-medium">{row.name}</p>
+          <p className="text-xs text-muted-foreground">v{row.version} • {row.author}</p>
+        </div>
       </div>
     )},
     { header: "Type", cell: (row) => <StatusBadge status={row.type} /> },
-    { header: "Module", cell: (row) => row.source_module ? <span className="text-xs text-muted-foreground capitalize">{row.source_module.replace(/_/g, " ")}</span> : "—" },
+    { header: "Module", cell: (row) => row.source_module
+      ? <Badge variant="outline" className="text-xs capitalize">{row.source_module.replace(/_/g, " ")}</Badge>
+      : "—"
+    },
     { header: "Project", accessor: "project_name" },
-    { header: "Created", cell: (row) => format(new Date(row.created_date), "MMM d, yyyy") },
-    { header: "File", cell: (row) => row.file_url ? (
-      <a href={row.file_url} target="_blank" rel="noopener noreferrer">
-        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary">
-          <ExternalLink className="w-3 h-3" /> Open
-        </Button>
-      </a>
-    ) : "—" },
+    { header: "Uploaded by", accessor: "author" },
+    { header: "Date", cell: (row) => format(new Date(row.created_date), "MMM d, yyyy") },
     { header: "", cell: (row) => (
-      <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button>
+      <div className="flex gap-1">
+        {row.file_url && (
+          <>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewDoc(row)} title="Preview">
+              <Eye className="w-4 h-4" />
+            </Button>
+            <a href={row.file_url} download target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Download">
+                <Download className="w-4 h-4" />
+              </Button>
+            </a>
+          </>
+        )}
+        <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button>
+      </div>
     )},
   ];
 
@@ -99,6 +122,19 @@ export default function Documents() {
         searchValue={search}
         onSearch={setSearch}
       >
+        <Select value={moduleFilter} onValueChange={setModuleFilter}>
+          <SelectTrigger className="w-36 bg-card"><SelectValue placeholder="All Modules" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Modules</SelectItem>
+            <SelectItem value="task">Task</SelectItem>
+            <SelectItem value="reception">Reception</SelectItem>
+            <SelectItem value="non_conformity">Non Conformity</SelectItem>
+            <SelectItem value="project">Project</SelectItem>
+            <SelectItem value="invoice">Invoice</SelectItem>
+            <SelectItem value="purchase_order">Purchase Order</SelectItem>
+            <SelectItem value="manual">Manual</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -125,6 +161,46 @@ export default function Documents() {
       </PageHeader>
 
       <DataTable columns={columns} data={filtered} isLoading={isLoading} />
+
+      {/* Preview Dialog */}
+      {previewDoc && (
+        <FormDialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)} title={previewDoc.name}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-muted-foreground">Type:</span> <span className="font-medium capitalize">{previewDoc.type}</span></div>
+              <div><span className="text-muted-foreground">Module:</span> <span className="font-medium capitalize">{previewDoc.source_module?.replace(/_/g, " ") || "—"}</span></div>
+              <div><span className="text-muted-foreground">Project:</span> <span className="font-medium">{previewDoc.project_name || "—"}</span></div>
+              <div><span className="text-muted-foreground">Upload Date:</span> <span className="font-medium">{format(new Date(previewDoc.created_date), "MMM d, yyyy")}</span></div>
+              <div className="col-span-2"><span className="text-muted-foreground">Uploaded by:</span> <span className="font-medium">{previewDoc.author || "—"}</span></div>
+            </div>
+            {previewDoc.description && (
+              <div className="p-3 rounded-lg bg-muted/30 text-sm">{previewDoc.description}</div>
+            )}
+            {previewDoc.file_url && (
+              <div className="rounded-lg border border-border overflow-hidden">
+                {isImage(previewDoc.file_url) ? (
+                  <img src={previewDoc.file_url} className="w-full max-h-96 object-contain" alt={previewDoc.name} />
+                ) : (
+                  <div className="p-6 text-center bg-muted/20">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">Preview not available for this file type.</p>
+                    <a href={previewDoc.file_url} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="gap-2">
+                        <ExternalLink className="w-4 h-4" /> Open in new tab
+                      </Button>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <a href={previewDoc.file_url} download target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Download</Button>
+              </a>
+            </div>
+          </div>
+        </FormDialog>
+      )}
 
       <FormDialog open={showForm} onOpenChange={setShowForm} title={editing ? "Edit Document" : "Add Document"}>
         <div className="grid grid-cols-2 gap-4">
