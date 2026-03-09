@@ -27,9 +27,30 @@ export default function Attachments() {
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
   const { data: subcontractors = [] } = useQuery({ queryKey: ["subcontractors"], queryFn: () => base44.entities.Subcontractor.list() });
   const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
+  const { data: personnel = [] } = useQuery({ queryKey: ["personnel"], queryFn: () => base44.entities.Personnel.list() });
+  const { data: allArticles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => base44.entities.Article.list() });
+  const { data: tools = [] } = useQuery({ queryKey: ["tools"], queryFn: () => base44.entities.Tool.list() });
+
+  // Only show completed tasks in the task selector
+  const completedTasks = tasks.filter(t => t.status === "completed");
 
   const selectedTask = tasks.find(t => t.id === form.task_id);
   const taskEstimatedCost = selectedTask?.estimated_cost || 0;
+
+  // Calculate detailed cost breakdown from task resources
+  const taskCostBreakdown = selectedTask ? {
+    personnel: (selectedTask.assigned_personnel || []).reduce((s, p) => {
+      if (p.cost) return s + p.cost;
+      const found = personnel.find(x => x.id === p.id);
+      return s + (found?.salary ? found.salary / 160 * (p.hours || 8) : 0);
+    }, 0),
+    articles: (selectedTask.assigned_articles || []).reduce((s, a) => {
+      if (a.unit_cost) return s + a.unit_cost * (a.quantity || 1);
+      const found = allArticles.find(x => x.id === a.id);
+      return s + ((found?.purchase_cost || 0) * (a.quantity || 1));
+    }, 0),
+    tools: (selectedTask.assigned_tools || []).reduce((s, t) => s + (t.cost || 0), 0),
+  } : null;
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
