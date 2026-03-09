@@ -119,7 +119,15 @@ export default function NonConformities() {
     { header: "Severity", cell: (row) => <StatusBadge status={row.severity} /> },
     { header: "Status", cell: (row) => <StatusBadge status={row.status || "open"} /> },
     { header: "Assigned", cell: (row) => <span className="text-xs">{(row.assigned_personnel || []).map(p => p.name).join(", ") || row.assigned_person || "—"}</span> },
-    { header: "Photos", cell: (row) => <span className="text-xs">{(row.photos || []).length} photos</span> },
+    { header: "Photos", cell: (row) => (
+      <div className="flex gap-1">
+        {(row.photos || []).slice(0, 3).map((url, i) => (
+          <img key={i} src={url} className="w-8 h-8 rounded object-cover border border-border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setPreviewImage(url)} />
+        ))}
+        {(row.photos || []).length > 3 && <span className="text-xs text-muted-foreground self-center">+{row.photos.length - 3}</span>}
+        {(row.photos || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+      </div>
+    )},
     { header: "Deadline", cell: (row) => row.deadline ? format(new Date(row.deadline), "MMM d, yyyy") : "—" },
     { header: "", cell: (row) => <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button> },
   ];
