@@ -21,6 +21,7 @@ export default function Attachments() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ validation_status: "pending", photos: [], documents: [], use_estimated_cost: true });
   const [uploading, setUploading] = useState(false);
+  const { symbol, fmt } = useCurrency();
   const queryClient = useQueryClient();
 
   const { data: attachments = [], isLoading } = useQuery({ queryKey: ["attachments"], queryFn: () => base44.entities.Attachment.list("-created_date") });
@@ -159,7 +160,7 @@ export default function Attachments() {
     { header: "Documents", cell: (row) => <span className="text-xs">{(row.documents || []).length} docs</span> },
     { header: "Validation", cell: (row) => <StatusBadge status={row.validation_status} /> },
     { header: "Verified by", accessor: "verified_by" },
-    { header: "Real Cost", cell: (row) => row.real_cost ? <span className="font-semibold text-warning">€{row.real_cost.toLocaleString()}</span> : "—" },
+    { header: "Real Cost", cell: (row) => row.real_cost ? <span className="font-semibold text-warning">{fmt(row.real_cost)}</span> : "—" },
     { header: "Date", cell: (row) => row.validation_date ? format(new Date(row.validation_date), "MMM d, yyyy") : "—" },
     { header: "", cell: (row) => <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button> },
   ];
@@ -193,20 +194,20 @@ export default function Attachments() {
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="p-2 rounded bg-white/60 border border-border text-center">
                     <p className="text-muted-foreground">Personnel</p>
-                    <p className="font-bold text-foreground">€{taskCostBreakdown.personnel.toLocaleString()}</p>
+                    <p className="font-bold text-foreground">{fmt(taskCostBreakdown.personnel)}</p>
                   </div>
                   <div className="p-2 rounded bg-white/60 border border-border text-center">
                     <p className="text-muted-foreground">Articles</p>
-                    <p className="font-bold text-foreground">€{taskCostBreakdown.articles.toLocaleString()}</p>
+                    <p className="font-bold text-foreground">{fmt(taskCostBreakdown.articles)}</p>
                   </div>
                   <div className="p-2 rounded bg-white/60 border border-border text-center">
                     <p className="text-muted-foreground">Tools</p>
-                    <p className="font-bold text-foreground">€{taskCostBreakdown.tools.toLocaleString()}</p>
+                    <p className="font-bold text-foreground">{fmt(taskCostBreakdown.tools)}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-primary/20">
                   <span className="text-sm font-semibold">Total Estimated:</span>
-                  <span className="text-primary font-bold text-base">€{taskEstimatedCost.toLocaleString()}</span>
+                  <span className="text-primary font-bold text-base">{fmt(taskEstimatedCost)}</span>
                 </div>
                 <div className="flex gap-3 mt-1">
                   <label className="flex items-center gap-2 cursor-pointer text-sm">
@@ -256,8 +257,8 @@ export default function Attachments() {
             <div className="p-3 rounded-lg bg-muted/30 space-y-2">
               <Label className="text-xs font-semibold uppercase text-muted-foreground">Real Cost Breakdown</Label>
               <div className="grid grid-cols-3 gap-2">
-                <div><Label className="text-xs">Personnel Cost (€)</Label><Input type="number" value={form.real_personnel_cost || ""} onChange={(e) => setForm({ ...form, real_personnel_cost: parseFloat(e.target.value) || 0 })} /></div>
-                <div><Label className="text-xs">Materials Cost (€)</Label><Input type="number" value={form.real_materials_cost || ""} onChange={(e) => setForm({ ...form, real_materials_cost: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label className="text-xs">Personnel Cost ({symbol})</Label><Input type="number" value={form.real_personnel_cost || ""} onChange={(e) => setForm({ ...form, real_personnel_cost: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label className="text-xs">Materials Cost ({symbol})</Label><Input type="number" value={form.real_materials_cost || ""} onChange={(e) => setForm({ ...form, real_materials_cost: parseFloat(e.target.value) || 0 })} /></div>
                 <div><Label className="text-xs">Hours Worked</Label><Input type="number" value={form.real_hours || ""} onChange={(e) => setForm({ ...form, real_hours: parseFloat(e.target.value) || 0 })} /></div>
               </div>
             </div>
