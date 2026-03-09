@@ -17,6 +17,20 @@ import { format } from "date-fns";
 import { Upload, X, Image, List, Kanban } from "lucide-react";
 import NCKanbanBoard from "@/components/nc/NCKanbanBoard";
 
+function ImagePreviewModal({ url, onClose }) {
+  if (!url) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80" onClick={onClose}>
+      <div className="relative max-w-4xl max-h-[90vh] p-2" onClick={e => e.stopPropagation()}>
+        <button className="absolute top-0 right-0 bg-white/20 hover:bg-white/40 rounded-full p-1 m-1" onClick={onClose}>
+          <X className="w-5 h-5 text-white" />
+        </button>
+        <img src={url} className="max-w-full max-h-[85vh] object-contain rounded-lg" alt="Preview" />
+      </div>
+    </div>
+  );
+}
+
 export default function NonConformities() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
