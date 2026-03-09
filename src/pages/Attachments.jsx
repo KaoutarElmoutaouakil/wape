@@ -172,31 +172,50 @@ export default function Attachments() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label>Task</Label>
+              <Label>Task (Completed only)</Label>
               <Select value={form.task_id || ""} onValueChange={handleTaskChange}>
-                <SelectTrigger><SelectValue placeholder="Select task" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select a completed task..." /></SelectTrigger>
                 <SelectContent>
-                  {tasks.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.project_name})</SelectItem>)}
+                  {completedTasks.length === 0 && <SelectItem value="_none" disabled>No completed tasks yet</SelectItem>}
+                  {completedTasks.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.project_name})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Estimated cost display */}
-            {form.task_id && taskEstimatedCost > 0 && (
-              <div className="col-span-2 p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-start gap-2">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Task Estimated Cost: <span className="text-primary font-bold">€{taskEstimatedCost.toLocaleString()}</span></p>
-                  <div className="flex gap-3 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input type="radio" checked={form.use_estimated_cost === true} onChange={() => setForm(f => ({ ...f, use_estimated_cost: true }))} />
-                      Use estimated cost
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input type="radio" checked={form.use_estimated_cost === false} onChange={() => setForm(f => ({ ...f, use_estimated_cost: false }))} />
-                      Enter real cost
-                    </label>
+            {/* Detailed cost breakdown from task resources */}
+            {form.task_id && taskCostBreakdown && (
+              <div className="col-span-2 p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-sm font-semibold text-primary">Task Cost Breakdown</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 rounded bg-white/60 border border-border text-center">
+                    <p className="text-muted-foreground">Personnel</p>
+                    <p className="font-bold text-foreground">€{taskCostBreakdown.personnel.toLocaleString()}</p>
                   </div>
+                  <div className="p-2 rounded bg-white/60 border border-border text-center">
+                    <p className="text-muted-foreground">Articles</p>
+                    <p className="font-bold text-foreground">€{taskCostBreakdown.articles.toLocaleString()}</p>
+                  </div>
+                  <div className="p-2 rounded bg-white/60 border border-border text-center">
+                    <p className="text-muted-foreground">Tools</p>
+                    <p className="font-bold text-foreground">€{taskCostBreakdown.tools.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-primary/20">
+                  <span className="text-sm font-semibold">Total Estimated:</span>
+                  <span className="text-primary font-bold text-base">€{taskEstimatedCost.toLocaleString()}</span>
+                </div>
+                <div className="flex gap-3 mt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" checked={form.use_estimated_cost === true} onChange={() => setForm(f => ({ ...f, use_estimated_cost: true }))} />
+                    Use estimated cost
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" checked={form.use_estimated_cost === false} onChange={() => setForm(f => ({ ...f, use_estimated_cost: false }))} />
+                    Enter real cost manually
+                  </label>
                 </div>
               </div>
             )}
