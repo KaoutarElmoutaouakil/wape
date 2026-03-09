@@ -45,13 +45,19 @@ export default function Tasks() {
   const updateTaskStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
       await base44.entities.Task.update(id, { status });
-      // Auto-update project progress
+      // Auto-update project progress and status
       const task = tasks.find(t => t.id === id);
       if (task?.project_id) {
         const projectTasks = tasks.map(t => t.id === id ? { ...t, status } : t).filter(t => t.project_id === task.project_id);
         const completed = projectTasks.filter(t => t.status === "completed").length;
         const progress = projectTasks.length > 0 ? Math.round((completed / projectTasks.length) * 100) : 0;
-        await base44.entities.Project.update(task.project_id, { progress });
+        const hasInProgress = projectTasks.some(t => t.status === "in_progress");
+        const project = projects.find(p => p.id === task.project_id);
+        const projectUpdate = { progress };
+        if (hasInProgress && project && project.status !== "in_progress") {
+          projectUpdate.status = "in_progress";
+        }
+        await base44.entities.Project.update(task.project_id, projectUpdate);
         queryClient.invalidateQueries({ queryKey: ["projects"] });
       }
     },
