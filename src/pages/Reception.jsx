@@ -42,22 +42,22 @@ export default function Reception() {
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      // Validate quantities
-      for (const item of (data.items || [])) {
+      const allItems = data.items || [];
+
+      // Validate: received qty cannot exceed ordered qty
+      for (const item of allItems) {
         if ((item.received_qty || 0) > (item.ordered_qty || 0)) {
-          throw new Error(`Received quantity for "${item.article_name}" exceeds ordered quantity (${item.ordered_qty}).`);
+          throw new Error(`Received quantity for "${item.article_name}" cannot exceed ordered quantity (${item.ordered_qty}).`);
         }
       }
 
       // Auto-determine status from quantities
-      const allItems = data.items || [];
-      let autoStatus = data.status;
+      let autoStatus = "pending";
       if (allItems.length > 0) {
-        const allComplete = allItems.every(i => (i.received_qty || 0) >= (i.ordered_qty || 0) && i.ordered_qty > 0);
+        const allComplete = allItems.every(i => (i.received_qty || 0) >= (i.ordered_qty || 0) && (i.ordered_qty || 0) > 0);
         const anyReceived = allItems.some(i => (i.received_qty || 0) > 0);
         if (allComplete) autoStatus = "complete";
         else if (anyReceived) autoStatus = "partial";
-        else autoStatus = "pending";
       }
 
       const payload = { ...data, status: autoStatus };
@@ -65,11 +65,9 @@ export default function Reception() {
         ? await base44.entities.Reception.update(editing.id, payload)
         : await base44.entities.Reception.create(payload);
 
-      // Create IN stock movements for received items (only newly received delta)
+      // Create IN stock movements for newly received items only (delta)
       if (autoStatus === "complete" || autoStatus === "partial") {
-        // Fetch fresh article data to avoid stale cache issues
         const freshArticles = await base44.entities.Article.list();
-
         for (const item of allItems) {
           if (!item.article_id) continue;
           const prevItem = (editing?.items || []).find(i => i.article_id === item.article_id);
@@ -90,9 +88,7 @@ export default function Reception() {
             });
             const art = freshArticles.find(a => a.id === item.article_id);
             if (art) {
-              await base44.entities.Article.update(art.id, {
-                current_stock: (art.current_stock || 0) + newlyReceived,
-              });
+              await base44.entities.Article.update(art.id, { current_stock: (art.current_stock || 0) + newlyReceived });
             }
           }
         }
@@ -100,11 +96,19 @@ export default function Reception() {
         queryClient.invalidateQueries({ queryKey: ["articles"] });
       }
 
-      // If partial, create a new pending reception for remaining quantities
-      // Only do this on CREATE (not edit) to avoid duplicating pending records
-      if (autoStatus === "partial" && !editing) {
+      // Create a pending "remaining delivery" reception only when going partial for the first time:
+      // - new record that is partial, OR
+      // - editing a pending record that becomes partial (first partial delivery)
+      // Do NOT create if editing a record that was already partial (sibling already exists)
+      const isFirstPartial = autoStatus === "partial" && (!editing || editing.status === "pending");
+      if (isFirstPartial) {
         const remainingItems = allItems
-          .map(i => ({ ...i, ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0), received_qty: 0, rejected_qty: 0 }))
+          .map(i => ({
+            ...i,
+            ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0),
+            received_qty: 0,
+            rejected_qty: 0,
+          }))
           .filter(i => i.ordered_qty > 0);
         if (remainingItems.length > 0) {
           await base44.entities.Reception.create({
@@ -117,35 +121,16 @@ export default function Reception() {
             status: "pending",
             items: remainingItems,
             documents: [],
-            notes: `Remaining delivery from partial reception — ${rec.id?.slice(-6)}`,
-          });
-        }
-      }
-
-      // If editing a pending → partial: create new pending for remaining
-      if (autoStatus === "partial" && editing && editing.status === "pending") {
-        const remainingItems = allItems
-          .map(i => ({ ...i, ordered_qty: (i.ordered_qty || 0) - (i.received_qty || 0), received_qty: 0, rejected_qty: 0 }))
-          .filter(i => i.ordered_qty > 0);
-        if (remainingItems.length > 0) {
-          await base44.entities.Reception.create({
-            supplier: data.supplier,
-            supplier_id: data.supplier_id,
-            purchase_order_id: data.purchase_order_id,
-            purchase_order_ref: data.purchase_order_ref,
-            project_id: data.project_id,
-            project_name: data.project_name,
-            status: "pending",
-            items: remainingItems,
-            documents: [],
-            notes: `Remaining delivery — ${rec.id?.slice(-6)}`,
+            notes: `Remaining delivery — partial ref: ${rec.id?.slice(-6)}`,
           });
         }
       }
 
       // Update linked PO status
       if (data.purchase_order_id) {
-        const newPoStatus = autoStatus === "complete" ? "received" : autoStatus === "partial" ? "partially_received" : null;
+        const newPoStatus = autoStatus === "complete" ? "received"
+          : autoStatus === "partial" ? "partially_received"
+          : null;
         if (newPoStatus) {
           await base44.entities.PurchaseOrder.update(data.purchase_order_id, { status: newPoStatus });
           queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
