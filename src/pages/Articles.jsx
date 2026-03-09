@@ -133,13 +133,8 @@ export default function Articles() {
           <div className="space-y-4">
             {showDetail.barcode_id && (
               <div className="p-4 rounded-lg bg-muted/30 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Barcode ID</p>
-                <p className="font-mono text-xl font-bold tracking-widest">{showDetail.barcode_id}</p>
-                <div className="mt-2 flex justify-center gap-0.5">
-                  {showDetail.barcode_id.split("").map((c, i) => (
-                    <div key={i} className={`bg-foreground rounded-sm ${c === "-" ? "w-3 h-6 opacity-0" : `w-${Math.random() > 0.5 ? "1" : "0.5"} h-8`}`} style={{ width: `${2 + Math.random() * 2}px`, height: "32px" }} />
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground mb-2">Barcode</p>
+                <BarcodeDisplay barcodeId={showDetail.barcode_id} articleName={showDetail.name} showDownload={true} />
               </div>
             )}
             <div className="grid grid-cols-3 gap-3">
@@ -211,7 +206,7 @@ export default function Articles() {
             <Input type="number" value={form.minimum_stock ?? 0} onChange={(e) => setForm({ ...form, minimum_stock: parseFloat(e.target.value) || 0 })} />
           </div>
           <div>
-            <Label>Purchase Cost (€)</Label>
+            <Label>Purchase Cost ({symbol})</Label>
             <Input type="number" value={form.purchase_cost || ""} onChange={(e) => setForm({ ...form, purchase_cost: parseFloat(e.target.value) || 0 })} />
           </div>
           <div>
