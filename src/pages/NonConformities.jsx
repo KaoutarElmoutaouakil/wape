@@ -144,6 +144,13 @@ export default function NonConformities() {
   return (
     <div className="space-y-4">
       <ImagePreviewModal url={previewImage} onClose={() => setPreviewImage(null)} />
+      {planViewerNC && (
+        <PlanViewer
+          planUrl={plans.find(p => p.id === planViewerNC.plan_id)?.file_url}
+          annotations={planViewerNC.plan_annotation}
+          onClose={() => setPlanViewerNC(null)}
+        />
+      )}
       <PageHeader title="Non Conformities" subtitle={`${ncs.filter(nc => nc.status === "open").length} open`} onAdd={() => openForm()} addLabel="New NC" searchValue={search} onSearch={setSearch}>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36 bg-card"><SelectValue /></SelectTrigger>
