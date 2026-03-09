@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Upload, X, Image, List, Kanban } from "lucide-react";
 import NCKanbanBoard from "@/components/nc/NCKanbanBoard";
+import PlanViewer from "@/components/nc/PlanViewer";
 
 function ImagePreviewModal({ url, onClose }) {
   if (!url) return null;
