@@ -131,7 +131,14 @@ export default function NonConformities() {
       </div>
     )},
     { header: "Deadline", cell: (row) => row.deadline ? format(new Date(row.deadline), "MMM d, yyyy") : "—" },
-    { header: "", cell: (row) => <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button> },
+    { header: "", cell: (row) => (
+      <div className="flex gap-1">
+        {row.plan_id && row.plan_annotation && (
+          <Button variant="ghost" size="sm" className="h-8 text-xs text-primary" onClick={() => setPlanViewerNC(row)}>View Plan</Button>
+        )}
+        <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openForm(row)}>Edit</Button>
+      </div>
+    )},
   ];
 
   return (
