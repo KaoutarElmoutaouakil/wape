@@ -294,7 +294,7 @@ export default function Tasks() {
             <CardTitle className="text-sm font-semibold">Gantt Chart — Project Timeline</CardTitle>
           </CardHeader>
           <CardContent>
-            <GanttChart tasks={filtered} />
+            <GanttChart tasks={filtered} personnel={personnel} tools={tools} articles={articles} />
           </CardContent>
         </Card>
       )}
