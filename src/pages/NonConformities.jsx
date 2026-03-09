@@ -264,7 +264,7 @@ export default function NonConformities() {
             <div className="flex flex-wrap gap-2 mt-2">
               {(form.photos || []).map((url, i) => (
                 <div key={i} className="relative">
-                  <img src={url} className="w-16 h-16 object-cover rounded-lg border border-border" />
+                  <img src={url} className="w-16 h-16 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setPreviewImage(url)} />
                   <button className="absolute -top-1 -right-1 bg-destructive rounded-full p-0.5" onClick={() => setForm(f => ({ ...f, photos: f.photos.filter((_, idx) => idx !== i) }))}>
                     <X className="w-2.5 h-2.5 text-white" />
                   </button>
