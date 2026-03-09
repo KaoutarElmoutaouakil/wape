@@ -12,32 +12,72 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Upload, X, ExternalLink, Image } from "lucide-react";
+import { Upload, X, ExternalLink, Info } from "lucide-react";
 
 export default function Attachments() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ validation_status: "pending", photos: [], documents: [] });
+  const [form, setForm] = useState({ validation_status: "pending", photos: [], documents: [], use_estimated_cost: true });
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ["attachments"],
-    queryFn: () => base44.entities.Attachment.list("-created_date"),
-  });
+  const { data: attachments = [], isLoading } = useQuery({ queryKey: ["attachments"], queryFn: () => base44.entities.Attachment.list("-created_date") });
   const { data: tasks = [] } = useQuery({ queryKey: ["tasks"], queryFn: () => base44.entities.Task.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
+  const { data: subcontractors = [] } = useQuery({ queryKey: ["subcontractors"], queryFn: () => base44.entities.Subcontractor.list() });
+  const { data: projects = [] } = useQuery({ queryKey: ["projects"], queryFn: () => base44.entities.Project.list() });
+
+  const selectedTask = tasks.find(t => t.id === form.task_id);
+  const taskEstimatedCost = selectedTask?.estimated_cost || 0;
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      // Calculate real cost
       const taskExpenses = expenses.filter(e => e.task_id === data.task_id);
-      const real_cost = taskExpenses.reduce((s, e) => s + (e.amount || 0), 0)
-        + (data.real_personnel_cost || 0) + (data.real_materials_cost || 0);
-      return editing
-        ? base44.entities.Attachment.update(editing.id, { ...data, real_cost })
-        : base44.entities.Attachment.create({ ...data, real_cost });
+      const expensesTotal = taskExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+      const real_cost = data.use_estimated_cost
+        ? taskEstimatedCost
+        : (data.real_personnel_cost || 0) + (data.real_materials_cost || 0) + expensesTotal;
+
+      const savedAtt = editing
+        ? await base44.entities.Attachment.update(editing.id, { ...data, real_cost })
+        : await base44.entities.Attachment.create({ ...data, real_cost });
+
+      // If validated and subcontractor linked → create/update invoice
+      if (data.validation_status === "approved" && data.subcontractor_id) {
+        const sub = subcontractors.find(s => s.id === data.subcontractor_id);
+        await base44.entities.Invoice.create({
+          invoice_number: `ATT-${savedAtt.id?.slice(-6)}`,
+          type: "subcontractor",
+          project_id: data.project_id,
+          project_name: data.project_name,
+          task_id: data.task_id,
+          task_name: data.task_name,
+          recipient: sub?.company_name || data.subcontractor_name,
+          amount: real_cost,
+          date: new Date().toISOString().split("T")[0],
+          status: "sent",
+          notes: `Auto-generated from validated attachment ${savedAtt.id?.slice(-6)}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      }
+
+      // Reduce project budget if cost changed
+      if (real_cost && data.project_id) {
+        const project = projects.find(p => p.id === data.project_id);
+        if (project && project.estimated_budget) {
+          const prevCost = editing?.real_cost || 0;
+          const delta = real_cost - prevCost;
+          if (delta !== 0) {
+            await base44.entities.Project.update(data.project_id, {
+              estimated_budget: Math.max(0, (project.estimated_budget || 0) - delta),
+            });
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+          }
+        }
+      }
+
+      return savedAtt;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attachments"] });
@@ -48,7 +88,10 @@ export default function Attachments() {
 
   const openForm = (att = null) => {
     setEditing(att);
-    setForm(att || { validation_status: "pending", photos: [], documents: [] });
+    setForm(att
+      ? { ...att, photos: att.photos || [], documents: att.documents || [], use_estimated_cost: true }
+      : { validation_status: "pending", photos: [], documents: [], use_estimated_cost: true }
+    );
     setShowForm(true);
   };
 
@@ -72,7 +115,7 @@ export default function Attachments() {
 
   const handleTaskChange = (tid) => {
     const t = tasks.find(x => x.id === tid);
-    setForm(f => ({ ...f, task_id: tid, task_name: t?.name || "", project_id: t?.project_id || "", project_name: t?.project_name || "" }));
+    setForm(f => ({ ...f, task_id: tid, task_name: t?.name || "", project_id: t?.project_id || "", project_name: t?.project_name || "", use_estimated_cost: true }));
   };
 
   const filtered = attachments.filter(a =>
@@ -107,6 +150,27 @@ export default function Attachments() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Estimated cost display */}
+            {form.task_id && taskEstimatedCost > 0 && (
+              <div className="col-span-2 p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-start gap-2">
+                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Task Estimated Cost: <span className="text-primary font-bold">€{taskEstimatedCost.toLocaleString()}</span></p>
+                  <div className="flex gap-3 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input type="radio" checked={form.use_estimated_cost === true} onChange={() => setForm(f => ({ ...f, use_estimated_cost: true }))} />
+                      Use estimated cost
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input type="radio" checked={form.use_estimated_cost === false} onChange={() => setForm(f => ({ ...f, use_estimated_cost: false }))} />
+                      Enter real cost
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <Label>Validation Status</Label>
               <Select value={form.validation_status || "pending"} onValueChange={(v) => setForm({ ...form, validation_status: v })}>
@@ -120,18 +184,34 @@ export default function Attachments() {
             </div>
             <div><Label>Verified By</Label><Input value={form.verified_by || ""} onChange={(e) => setForm({ ...form, verified_by: e.target.value })} /></div>
             <div><Label>Validation Date</Label><Input type="date" value={form.validation_date || ""} onChange={(e) => setForm({ ...form, validation_date: e.target.value })} /></div>
+
+            {/* Subcontractor linking for invoice */}
+            <div>
+              <Label>Linked Subcontractor (for invoice)</Label>
+              <Select value={form.subcontractor_id || ""} onValueChange={(v) => {
+                const s = subcontractors.find(x => x.id === v);
+                setForm({ ...form, subcontractor_id: v, subcontractor_name: s?.company_name || "" });
+              }}>
+                <SelectTrigger><SelectValue placeholder="Optional — triggers invoice on approval" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {subcontractors.map(s => <SelectItem key={s.id} value={s.id}>{s.company_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Real Cost breakdown */}
-          <div className="p-3 rounded-lg bg-muted/30 space-y-2">
-            <Label className="text-xs font-semibold uppercase text-muted-foreground">Real Cost Breakdown</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <div><Label className="text-xs">Personnel Cost (€)</Label><Input type="number" value={form.real_personnel_cost || ""} onChange={(e) => setForm({ ...form, real_personnel_cost: parseFloat(e.target.value) || 0 })} /></div>
-              <div><Label className="text-xs">Materials Cost (€)</Label><Input type="number" value={form.real_materials_cost || ""} onChange={(e) => setForm({ ...form, real_materials_cost: parseFloat(e.target.value) || 0 })} /></div>
-              <div><Label className="text-xs">Hours Worked</Label><Input type="number" value={form.real_hours || ""} onChange={(e) => setForm({ ...form, real_hours: parseFloat(e.target.value) || 0 })} /></div>
+          {/* Real Cost breakdown (shown when not using estimated) */}
+          {(!form.use_estimated_cost || !taskEstimatedCost) && (
+            <div className="p-3 rounded-lg bg-muted/30 space-y-2">
+              <Label className="text-xs font-semibold uppercase text-muted-foreground">Real Cost Breakdown</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div><Label className="text-xs">Personnel Cost (€)</Label><Input type="number" value={form.real_personnel_cost || ""} onChange={(e) => setForm({ ...form, real_personnel_cost: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label className="text-xs">Materials Cost (€)</Label><Input type="number" value={form.real_materials_cost || ""} onChange={(e) => setForm({ ...form, real_materials_cost: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label className="text-xs">Hours Worked</Label><Input type="number" value={form.real_hours || ""} onChange={(e) => setForm({ ...form, real_hours: parseFloat(e.target.value) || 0 })} /></div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Total real cost calculated automatically (includes task expenses)</p>
-          </div>
+          )}
 
           {/* Photos */}
           <div>
