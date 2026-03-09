@@ -26,6 +26,7 @@ export default function Articles() {
   const [showDetail, setShowDetail] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const { symbol, fmt } = useCurrency();
   const queryClient = useQueryClient();
 
   const { data: articles = [], isLoading } = useQuery({
@@ -95,7 +96,7 @@ export default function Articles() {
       );
     }},
     { header: "Min Stock", accessor: "minimum_stock" },
-    { header: "Purchase Cost", cell: (row) => row.purchase_cost ? `€${row.purchase_cost}` : "—" },
+    { header: "Purchase Cost", cell: (row) => row.purchase_cost ? fmt(row.purchase_cost) : "—" },
     { header: "Status", cell: (row) => {
       const low = (row.current_stock || 0) <= (row.minimum_stock || 0) && row.minimum_stock > 0;
       return low
@@ -159,7 +160,7 @@ export default function Articles() {
               <div><span className="text-muted-foreground">Category:</span> <span className="font-medium">{showDetail.category || "—"}</span></div>
               <div><span className="text-muted-foreground">Unit:</span> <span className="font-medium">{showDetail.unit || "—"}</span></div>
               <div><span className="text-muted-foreground">Min Stock:</span> <span className="font-medium">{showDetail.minimum_stock || 0}</span></div>
-              <div><span className="text-muted-foreground">Purchase Cost:</span> <span className="font-medium">{showDetail.purchase_cost ? `€${showDetail.purchase_cost}` : "—"}</span></div>
+              <div><span className="text-muted-foreground">Purchase Cost:</span> <span className="font-medium">{showDetail.purchase_cost ? fmt(showDetail.purchase_cost) : "—"}</span></div>
               <div className="col-span-2"><span className="text-muted-foreground">Location:</span> <span className="font-medium">{showDetail.storage_location || "—"}</span></div>
             </div>
           </div>
