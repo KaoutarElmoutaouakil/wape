@@ -357,15 +357,30 @@ export default function Payments() {
   const { data: suppliers = [] }      = useQuery({ queryKey: ["suppliers"],      queryFn: () => base44.entities.Supplier.list() });
   const { data: subcontractors = [] } = useQuery({ queryKey: ["subcontractors"], queryFn: () => base44.entities.Subcontractor.list() });
 
+  // Auto-calculate status based on dates and amounts
+  const computeStatus = (data) => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    // Subcontractor: partial / paid by amounts
+    if (data.type === "subcontractor" && data.contract_amount) {
+      const paid = parseFloat(data.amount_paid) || 0;
+      const contract = parseFloat(data.contract_amount) || 0;
+      if (paid >= contract && paid > 0) return "paid";
+      if (paid > 0) return "partial";
+    }
+    // If payment_date is set → paid
+    if (data.payment_date) return "paid";
+    // Check due / next_billing_date for expiry
+    const dueDate = data.due_date || data.next_billing_date;
+    if (dueDate) {
+      const due = new Date(dueDate); due.setHours(0,0,0,0);
+      if (due < today) return "expired";
+    }
+    return "pending";
+  };
+
   const saveMutation = useMutation({
     mutationFn: (data) => {
-      const payload = { ...data };
-      if (payload.type === "subcontractor" && payload.contract_amount) {
-        const paid = parseFloat(payload.amount_paid) || 0;
-        const contract = parseFloat(payload.contract_amount) || 0;
-        if (paid >= contract) payload.status = "paid";
-        else if (paid > 0) payload.status = "partial";
-      }
+      const payload = { ...data, status: computeStatus(data) };
       return editing
         ? base44.entities.Payment.update(editing.id, payload)
         : base44.entities.Payment.create(payload);
