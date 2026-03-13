@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Map, CheckSquare, Users, Wrench, Package,
   ShoppingCart, DollarSign, Receipt, FileText, AlertTriangle, MessageSquare,
   BarChart3, Settings, ChevronDown, ChevronRight, HardHat, Menu, X,
-  Truck, Building2, Paperclip, ClipboardList, UserSquare, Factory, LifeBuoy
+  Truck, Building2, Paperclip, ClipboardList, UserSquare, Factory, LifeBuoy, CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ const navItems = [
       { name: "Finance", icon: DollarSign, page: "Finance" },
       { name: "Expenses", icon: Receipt, page: "Expenses" },
       { name: "Invoices", icon: Receipt, page: "Invoices" },
+      { name: "Payments", icon: CreditCard, page: "Payments" },
     ]
   },
   {
