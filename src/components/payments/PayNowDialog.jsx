@@ -1,20 +1,24 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Shield, CheckCircle2, Loader2 } from "lucide-react";
+import { CreditCard, Shield, CheckCircle2, Loader2, Upload } from "lucide-react";
 
 const METHOD_TABS = [
-  { id: "credit_card", label: "Credit Card", icon: "💳" },
-  { id: "paypal",      label: "PayPal",       icon: "🅿️" },
-  { id: "cmi",         label: "CMI Morocco",  icon: "🏦" },
+  { id: "credit_card",   label: "Credit Card",  icon: "💳" },
+  { id: "paypal",        label: "PayPal",        icon: "🅿️" },
+  { id: "cmi",           label: "CMI Morocco",   icon: "🏦" },
+  { id: "bank_transfer", label: "Bank Transfer", icon: "🏛" },
 ];
 
 export default function PayNowDialog({ payment, fmt, onConfirm, onCancel }) {
   const [method, setMethod]     = useState("credit_card");
   const [step, setStep]         = useState("form"); // form | confirming | success
   const [cardForm, setCardForm] = useState({ name: "", number: "", expiry: "", cvv: "", address: "" });
+  const [bankForm, setBankForm] = useState({ bank_name: "", account_holder: "", receipt: null, receipt_name: "" });
+  const [uploading, setUploading] = useState(false);
   const [error, setError]       = useState("");
 
   const validate = () => {
@@ -24,7 +28,20 @@ export default function PayNowDialog({ payment, fmt, onConfirm, onCancel }) {
       if (!cardForm.expiry.match(/^\d{2}\/\d{2}$/)) return "Expiry must be MM/YY.";
       if (cardForm.cvv.length < 3) return "Invalid CVV.";
     }
+    if (method === "bank_transfer") {
+      if (!bankForm.bank_name) return "Bank name is required.";
+      if (!bankForm.account_holder) return "Account holder is required.";
+      if (!bankForm.receipt_name) return "Please upload the payment receipt.";
+    }
     return "";
+  };
+
+  const uploadReceipt = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setBankForm(f => ({ ...f, receipt: file_url, receipt_name: file.name }));
+    setUploading(false);
   };
 
   const handlePay = () => {
@@ -91,7 +108,7 @@ export default function PayNowDialog({ payment, fmt, onConfirm, onCancel }) {
       {/* Method selector */}
       <div>
         <Label className="mb-2 block">Payment Method</Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {METHOD_TABS.map(m => (
             <button
               key={m.id}
@@ -176,14 +193,39 @@ export default function PayNowDialog({ payment, fmt, onConfirm, onCancel }) {
         </div>
       )}
 
+      {/* Bank Transfer */}
+      {method === "bank_transfer" && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Bank Name</Label>
+              <Input placeholder="e.g. Attijariwafa Bank" value={bankForm.bank_name} onChange={(e) => setBankForm(f => ({ ...f, bank_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Account Holder</Label>
+              <Input value={bankForm.account_holder} onChange={(e) => setBankForm(f => ({ ...f, account_holder: e.target.value }))} />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Upload Payment Receipt</Label>
+              <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-dashed border-border hover:bg-muted/30 text-sm text-muted-foreground">
+                <Upload className="w-4 h-4" />
+                {uploading ? "Uploading…" : bankForm.receipt_name || "Upload receipt (PDF / image)"}
+                <input type="file" accept=".pdf,.jpg,.png" className="hidden" onChange={uploadReceipt} />
+              </label>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Upload your bank transfer receipt for validation by the accounting team.</p>
+        </div>
+      )}
+
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{error}</p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handlePay} className="gap-2">
-          <Shield className="w-4 h-4" /> Pay {fmt(payment.amount)}
+        <Button onClick={handlePay} className="gap-2" disabled={uploading}>
+          <Shield className="w-4 h-4" /> {method === "bank_transfer" ? "Submit Payment" : `Pay ${fmt(payment.amount)}`}
         </Button>
       </div>
     </div>
