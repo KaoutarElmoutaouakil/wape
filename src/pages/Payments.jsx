@@ -120,6 +120,14 @@ function PaymentForm({ editing, defaultType, projects, suppliers, subcontractors
     setUploading(false);
   };
 
+  const uploadBankReceipt = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(p => ({ ...p, bank_receipt_url: file_url, bank_receipt_name: file.name }));
+    setUploading(false);
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -261,26 +269,59 @@ function PaymentForm({ editing, defaultType, projects, suppliers, subcontractors
               <SelectItem value="credit_card">💳 Credit Card</SelectItem>
               <SelectItem value="paypal">🅿️ PayPal</SelectItem>
               <SelectItem value="cmi">🏦 CMI Morocco</SelectItem>
-              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-              <SelectItem value="mobile_payment">Mobile Payment</SelectItem>
-              <SelectItem value="check">Check</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="bank_transfer">🏛 Bank Transfer</SelectItem>
+              <SelectItem value="mobile_payment">📱 Mobile Payment</SelectItem>
+              <SelectItem value="check">📄 Check</SelectItem>
+              <SelectItem value="cash">💵 Cash</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label>Status</Label>
-          <Select value={form.status || "pending"} onValueChange={(v) => f("status", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="partial">Partial</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+
+        {/* ── Dynamic method fields ── */}
+        {form.payment_method === "credit_card" && (<>
+          <div className="col-span-2"><Label className="text-xs">Cardholder Name</Label><Input value={form.card_name || ""} onChange={(e) => f("card_name", e.target.value)} placeholder="Full name on card" /></div>
+          <div className="col-span-2"><Label className="text-xs">Card Number</Label><Input value={form.card_number || ""} onChange={(e) => f("card_number", e.target.value.replace(/\D/g,"").replace(/(.{4})/g,"$1 ").trim().slice(0,19))} placeholder="0000 0000 0000 0000" maxLength={19} /></div>
+          <div><Label className="text-xs">Expiry (MM/YY)</Label><Input value={form.card_expiry || ""} maxLength={5} onChange={(e) => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2,4); f("card_expiry", v); }} placeholder="MM/YY" /></div>
+          <div><Label className="text-xs">CVV</Label><Input value={form.card_cvv || ""} maxLength={4} onChange={(e) => f("card_cvv", e.target.value.replace(/\D/g,""))} placeholder="•••" type="password" /></div>
+          <div className="col-span-2"><Label className="text-xs">Billing Address</Label><Input value={form.billing_address || ""} onChange={(e) => f("billing_address", e.target.value)} placeholder="123 Street, City, Country" /></div>
+          <div className="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-success/5 border border-success/20 text-xs text-muted-foreground">
+            <Shield className="w-3.5 h-3.5 text-success shrink-0" />Card data is encrypted and never stored on our servers.
+          </div>
+        </>)}
+
+        {form.payment_method === "paypal" && (<>
+          <div className="col-span-2"><Label className="text-xs">PayPal Email</Label><Input type="email" value={form.paypal_email || ""} onChange={(e) => f("paypal_email", e.target.value)} placeholder="your@paypal.com" /></div>
+          <div className="col-span-2 p-3 rounded-lg bg-[#003087]/5 border border-[#003087]/20 text-xs text-muted-foreground">
+            🅿️ After saving, use the <strong>Pay Now</strong> button to complete payment via PayPal's secure redirect.
+          </div>
+        </>)}
+
+        {form.payment_method === "cmi" && (
+          <div className="col-span-2 p-3 rounded-lg bg-green-500/5 border border-green-500/20 text-xs text-muted-foreground">
+            🏦 <strong>CMI Morocco</strong> — Centre Monétique Interbancaire. After saving, use the <strong>Pay Now</strong> button to be redirected to the CMI secure gateway. Accepts all Moroccan bank cards.
+          </div>
+        )}
+
+        {form.payment_method === "bank_transfer" && (<>
+          <div><Label className="text-xs">Bank Name</Label><Input value={form.bank_name || ""} onChange={(e) => f("bank_name", e.target.value)} placeholder="e.g. Attijariwafa Bank" /></div>
+          <div><Label className="text-xs">Account Holder</Label><Input value={form.bank_account_holder || ""} onChange={(e) => f("bank_account_holder", e.target.value)} /></div>
+          <div className="col-span-2">
+            <Label className="text-xs">Upload Payment Receipt</Label>
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border border-dashed border-border hover:bg-muted/30 text-sm text-muted-foreground">
+              <Upload className="w-4 h-4" />
+              {uploading ? "Uploading…" : form.bank_receipt_name || "Upload receipt (PDF / image)"}
+              <input type="file" accept=".pdf,.jpg,.png" className="hidden" onChange={uploadBankReceipt} />
+            </label>
+          </div>
+        </>)}
+
         <div className="col-span-2"><Label>Transaction Reference</Label><Input value={form.transaction_reference || ""} onChange={(e) => f("transaction_reference", e.target.value)} placeholder="Auto-filled after online payment" /></div>
+      </div>
+
+      {/* Auto-status info */}
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 text-xs text-muted-foreground">
+        <Clock className="w-3.5 h-3.5 shrink-0" />
+        <span>Payment status is <strong>calculated automatically</strong>: Paid when payment date is set, Expired when due date passes without payment.</span>
       </div>
 
       <div><Label>Notes</Label><Textarea value={form.notes || ""} onChange={(e) => f("notes", e.target.value)} /></div>
