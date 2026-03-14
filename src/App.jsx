@@ -5,6 +5,8 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import PaymentsPage from './pages/Payments';
+import PointageJournalierPage from './pages/PointageJournalier';
+import RapportPresencePage from './pages/RapportPresence';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -59,6 +61,8 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Payments" element={<LayoutWrapper currentPageName="Payments"><PaymentsPage /></LayoutWrapper>} />
+      <Route path="/PointageJournalier" element={<LayoutWrapper currentPageName="PointageJournalier"><PointageJournalierPage /></LayoutWrapper>} />
+      <Route path="/RapportPresence" element={<LayoutWrapper currentPageName="RapportPresence"><RapportPresencePage /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
